@@ -119,3 +119,28 @@ This proposal seems less good than the others:
 * Censorship is done at runtime, not at parse time, so the implementation needs to store the source text for some interval.
 
 Let's not do this.
+
+### `delete Function.prototype.toString`
+
+In the past, people have asked if perhaps engines could just detect the pattern of
+
+```js
+delete Function.prototype.toString;
+```
+
+ early in a source file, and perform appropriate optimizations.
+
+ Unfortunately this does not work in any multi-realm environment:
+
+```js
+delete Function.prototype.toString;
+
+function foo() {
+    // ...
+}
+
+const otherGlobal = frames[0];
+console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("..."));
+```
+
+It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. We'd like whatever we come up with to work for library developers as well.
