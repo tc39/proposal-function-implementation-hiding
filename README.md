@@ -40,7 +40,7 @@ Below are a few proposals.
 
 A new pragma would be introduced, perhaps `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
-Similar to the strict pragma, this new pragma would apply "downward", so that everything within the scope gets censored. For example:
+Similar to the strict pragma, this new pragma would apply "inclusively downward", so that the everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
 ```js
 function foo() {
