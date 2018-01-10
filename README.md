@@ -79,7 +79,7 @@ Then, individual hosts would expose (or not) the ability to censor functions, so
 $ node --no-fn-tostring myapp.js
 ```
 
-or in the browser, using a whole-pragma such as
+or in the browser, using a whole-page pragma such as
 
 ```html
 <meta http-equiv="script-tostring" content="off">
