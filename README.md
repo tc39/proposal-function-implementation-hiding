@@ -32,6 +32,8 @@ In practice, we expect people mostly want the scope of the censorship to be per 
 
 Another important constraint is that you must not be able to "uncensor" a function after censoring it. Doing so would require implementations to hold the source text around anyway, negating the memory usage benefits of censorship.
 
+Finally, we want it to be relatively easy to censor third-party libraries that you use in your JavaScript application. If you are using a library which can work fine with or without censorship, but the library author has for whatever reason not decided to censor its contents, it's nice to be able to reclaim the extra memory of that library's source text.
+
 Below are a few proposals.
 
 ## Proposals
@@ -67,7 +69,7 @@ Some potential complications:
 * Like `"use strict"`, this cannot be opted out of from within a censored scope. That seems fine though.
 * It might be slightly confusing that in the above example `y` is censored; one might think "the censorship starts inside `y`". But, `"use strict"` has an analogous problem ("the strictness starts inside `y`"), and mostly people seem fine.
 * We would need to introduce pragmas into class bodies, which is unprecedented since currently they are always strict.
-* For memory-conscious developers using uncensored third-party libraries, they would need to do some source file preprocessing to censor them.
+* Censoring third-party libraries requires some minimal source file preprocessing.
 
 ### An external-to-JavaScript switch
 
@@ -93,7 +95,9 @@ Script-ToString: off
 
 on individual JavaScript files.
 
-The main advantage of this method over the pragma is that it allows relatively easy imposition of broad censorship across a whole program or source file, without source text manipulation. But there is of course a tradeoff: when external metadata controls program behavior, code becomes less portable. In other words, with this solution, it's not obvious whether it's safe to censor a source file or not; you basically have to try it and see if anything breaks.
+The main advantage of this method over the pragma is that it allows relatively easy imposition of broad censorship across a whole program or source file, without any source text manipulation. In particular, it makes it trivial to censor third-party libraries.
+
+But there is of course a tradeoff: when external metadata controls program behavior, code becomes less portable. A library (such as a polyfill library) can't depend on itself being censored; the application developer has to make this choice themselves.
 
 ### A one-time censorship method
 
@@ -115,7 +119,7 @@ Note that we do not propose a method that returns a new, censored version becaus
 
 This proposal seems less good than the others:
 
-* It is difficult to en-masse censor many functions. In particular, it is impossible to censor functions which are kept alive by a third-party library in one of its closures, without nontrivial source text modification.
+* It is difficult to en-masse censor many functions. In particular, it is impossible to censor closed-over functions which are kept alive by a third-party library, without nontrivial source text modification of that library. So, this fails the "easy to censor third-party libraries you use" criterion.
 * Censorship is done at runtime, not at parse time, so the implementation needs to store the source text for some interval.
 
 Let's not do this.
