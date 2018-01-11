@@ -99,9 +99,11 @@ The main advantage of this method over the pragma is that it allows relatively e
 
 But there is of course a tradeoff: when external metadata controls program behavior, code becomes less portable. A library (such as a polyfill library) can't depend on itself being censored; the application developer has to make this choice themselves.
 
+## Rejected alternatives
+
 ### A one-time censorship method
 
-In this proposal, functions get a new method, `f.censor()`, which permanently censors their stringified value. You'd use it like so:
+In this alternative, functions get a new method, `f.censor()`, which permanently censors their stringified value. You'd use it like so:
 
 ```js
 function foo() {
@@ -117,10 +119,11 @@ console.assert(foo.toString() === "function foo() { [ native code ] }");
 
 Note that we do not propose a method that returns a new, censored version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new censored version of it?
 
-This proposal seems less good than the others:
+This alternative seems less good than the others:
 
 * It is difficult to en-masse censor many functions. In particular, it is impossible to censor closed-over functions which are kept alive by a third-party library, without nontrivial source text modification of that library. So, this fails the "easy to censor third-party libraries you use" criterion.
 * Censorship is done at runtime, not at parse time, so the implementation needs to store the source text for some interval.
+* In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstract, and harder to reason about.
 
 Let's not do this.
 
