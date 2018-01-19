@@ -167,3 +167,24 @@ console.assert(foo.name === "");
 ```
 
 As such, I think it's better to leave these two orthogonal.
+
+### Shouldn't this kind of meta-API involve a well-known symbol?
+
+It's tempting, given APIs like `Symbol.isConcatSpreadable` or `Symbol.iterator`, to think that changing the behavior of an object with regard to some language feature should always be done by installing a well-known symbol onto the object.
+
+This does not work very well for our use case. In particular, any kind of symbol flag would be reversible: e.g.
+
+```js
+function foo() { /* ... */ }
+console.assert(foo.toString.includes("..."));
+
+foo[Symbol.censoredFPToString] = true;
+console.assert(!foo.toString.includes("..."));
+
+foo[Symbol.censoredFPToString] = false;
+console.assert(foo.toString.includes("...")); // oops
+```
+
+As noted early, it's an important constraint that you not be able to uncensor functions after censoring them. So this design does not work.
+
+You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.censor()` proposal above.
