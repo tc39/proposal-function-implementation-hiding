@@ -151,3 +151,19 @@ console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("...")
 ```
 
 It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. We'd like whatever we come up with to work for library developers as well.
+
+## FAQs
+
+### Should this censor the function name as well?
+
+Some of the same arguments for censorship also apply to a function's `name` property. However, I've left that out of the proposal, because the language already has a mechanism for censoring `name`:
+
+```js
+function foo() { }
+console.assert(foo.name === "foo");
+
+Object.defineProperty(foo, "name", { value: "" });
+console.assert(foo.name === "");
+```
+
+As such, I think it's better to leave these two orthogonal.
