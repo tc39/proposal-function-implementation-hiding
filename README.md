@@ -16,7 +16,17 @@ Another unnecessary insight gained by `f.toString()` is how a function was creat
 
 Having to store the source text of a function for later lookup causes unnecessary memory usage. Especially on memory-constrained platforms, such as embedded devices or [Android Go phones](https://docs.google.com/presentation/d/1snSOAvzlbHsBaH1nelwf2JQq4KYOd6eWWIIO3fOlajs/edit#slide=id.g26319d7823_6_247), the extra space required for storing source text is quite significant.
 
-TODO: get some more data on how bad this is.
+Some data on this was gathered in Chrome in [December 2016](https://docs.google.com/document/d/1LlZz8BqxVIaXbTSsYN4ZPgYGwJJpxMq2_sv6RvdRXTI/edit); scroll to the conclusions section, where you can find quotes like:
+
+> renderer's PartitionAlloc (Summary): WTF::StringImpl is clearly the biggest consumer. We confirmed that most of the WTF::StringImpls come from JavaScript source strings.
+
+> To achieve the next massive reduction, it's important to look at the following items: WTF::StringImpl: Most WTF::StringImpls come from JavaScript source strings.
+
+In Februrary 2018, a quick ad-hoc test was performed on Twitter.com (again in Chrome), producing the following graph (source string memory usage is the large blue block):
+
+![A graph showing source strings as the single biggest contributor to Twitter's memory usage, accounting for approximately one-fifth of the memory](./twitter-memory.png)
+
+All that said, at least in some architectures (including V8 and SpiderMonkey), it is not a simple memory win to start censoring `f.toString()`. These engines perform lazy compilation, which requires at least keeping the source text around until the relevant functions have been lazily compiled; it cannot be immediately dropped from memory after parsing. Regardless, we hope that by advancing this proposal we can put the groundwork in place to allow these optimizations to bubble up in priority.
 
 ## Toward a solution
 
