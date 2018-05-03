@@ -1,6 +1,6 @@
 # `Function.prototype.toString()` censorship proposal
 
-A proposal for a new pragma, tentatively `"use no Function.prototype.toString"`, which censors a function's source text to `[native code]`, like other unavailable functions.
+A proposal for a new pragma, tentatively `"use no Function.prototype.toString"`, which censors the source text revealed by `fn.toString()` to `[native code]`.
 
 This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
 
@@ -47,14 +47,14 @@ Similar to the strict pragma, this new pragma would apply "inclusively downward"
 
 ```js
 function foo() {
-    const x = () => {};
+  const x = () => {};
 
-    const y = () => {
-        "use no Function.prototype.toString";
-        class Z {
-            m() {}
-        }
-    };
+  const y = () => {
+    "use no Function.prototype.toString";
+    class Z {
+      m() {}
+    }
+  };
 }
 ```
 
@@ -75,7 +75,7 @@ In this alternative, functions get a new method, `f.censor()`, which permanently
 
 ```js
 function foo() {
-    // ...
+  // ...
 }
 
 console.assert(foo.toString().includes("..."));
@@ -109,7 +109,7 @@ delete Function.prototype.toString;
 delete Function.prototype.toString;
 
 function foo() {
-    // ...
+  // ...
 }
 
 const otherGlobal = frames[0];

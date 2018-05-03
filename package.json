@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "proposal-function-prototype-tostring-censorship",
+  "description": "Function.prototype.toString() censorship proposal for JavaScript (build setup only)",
+  "license": "MIT",
+  "repository": "domenic/proposal-function-prototype-tostring-censorship",
+  "scripts": {
+    "prebuild": "mkdir out || exit 0",
+    "build": "ecmarkup spec.html out/index.html",
+    "watch": "npm run build -- --watch"
+  },
+  "devDependencies": {
+    "ecmarkup": "^3.13.0"
+  }
+}
