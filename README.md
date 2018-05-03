@@ -1,5 +1,9 @@
 # `Function.prototype.toString()` censorship proposal
 
+A proposal for a new pragma, tentatively `"use no Function.prototype.toString"`, which censors a function's source text to `[native code]`, like other unavailable functions.
+
+This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
+
 ## The problem
 
 JavaScript's `Function.prototype.toString()` method reveals the source text originally used to create the function. This causes two main issues:
@@ -28,29 +32,16 @@ In Februrary 2018, a quick ad-hoc test was performed on Twitter.com (again in Ch
 
 All that said, at least in some architectures (including V8 and SpiderMonkey), it is not a simple memory win to start censoring `f.toString()`. These engines perform lazy compilation, which requires at least keeping the source text around until the relevant functions have been lazily compiled; it cannot be immediately dropped from memory after parsing. Regardless, we hope that by advancing this proposal we can put the groundwork in place to allow these optimizations to bubble up in priority.
 
-## Toward a solution
+## The solution
 
-We'd like to provide a way to "censor" the output of `Function.prototype.toString()`, allowing both of these issues to be addressed.
+The solution is to provide a way to "censor" the output of `Function.prototype.toString()`. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
 
-There are a few major questions that come up in designing such a solution:
+* One that applied out of band, especially suited for applications that want to control their memory usage.
+* One that is applied in-band with the source text, especially suited for libraries that want to gain encapsulation.
 
-* What is the scope of the censorship? Some candidates include realm, source file, and individual function.
-* What is the mechanism for censoring? Some candidates include an external-to-JavaScript flag, a source-text-level parsing-time annotation, or a dynamic switch on the function object itself.
-* What is the censored output? Probably this should be something simple like `function $functionName() { [native code] }`; this allows cloaked polyfills. We could also contemplate, however, using some new sigil like `[censored code]`.
+The out-of-band censorship solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook. See [previous revisions of this document](https://github.com/domenic/proposal-function-prototype-tostring-censorship/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
 
-In practice, we expect people mostly want the scope of the censorship to be per source file, or at least per large block of code. That is, we expect entire libraries to be written with censored `f.toString()`. However, given the still-common practices of bundling and concatenation, we may need something more granular so that people can mix together uncensored and censored code in a single source file, for cases where programs depend on at least some functions having uncensored `f.toString()` output.
-
-Another important constraint is that you must not be able to "uncensor" a function after censoring it. Doing so would require implementations to hold the source text around anyway, negating the memory usage benefits of censorship.
-
-Finally, we want it to be relatively easy to censor third-party libraries that you use in your JavaScript application. If you are using a library which can work fine with or without censorship, but the library author has for whatever reason not decided to censor its contents, it's nice to be able to reclaim the extra memory of that library's source text.
-
-Below are a few proposals.
-
-## Proposals
-
-### A new pragma
-
-A new pragma would be introduced, perhaps `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
+This proposal is for the in-band switch. It would be a new pragma, tentatively `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
 Similar to the strict pragma, this new pragma would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
@@ -74,40 +65,7 @@ This proposal draws heavily on the strengths of the existing strict mode pragma:
 * It allows easy censorship of an entire source file.
 * At the same time, it allows easy bundling together of uncensored and censored code, by using anonymous-function-wrapper blocks.
 
-Some potential complications:
-
-* Like `"use strict"`, this cannot be opted out of from within a censored scope. That seems fine though.
-* It might be slightly confusing that in the above example `y` is censored; one might think "the censorship starts inside `y`". But, `"use strict"` has an analogous problem ("the strictness starts inside `y`"), and mostly people seem fine.
-* We would need to introduce pragmas into class bodies, which is unprecedented since currently they are always strict.
-* Censoring third-party libraries requires some minimal source file preprocessing.
-
-### An external-to-JavaScript switch
-
-In this proposal, the JavaScript specification would mostly not be modified. It would only add some clause to the definition of `Function.prototype.toString()` which allows implementations to return an appropriate, well-defined censored string under host-defined conditions.
-
-Then, individual hosts would expose (or not) the ability to censor functions, source files, realms, or programs. For example, you could imagine running
-
-```bash
-$ node --no-fn-tostring myapp.js
-```
-
-or in the browser, using a whole-page pragma such as
-
-```html
-<meta http-equiv="script-tostring" content="off">
-```
-
-or using a per-resource header such as
-
-```
-Script-ToString: off
-```
-
-on individual JavaScript files.
-
-The main advantage of this method over the pragma is that it allows relatively easy imposition of broad censorship across a whole program or source file, without any source text manipulation. In particular, it makes it trivial to censor third-party libraries.
-
-But there is of course a tradeoff: when external metadata controls program behavior, code becomes less portable. A library (such as a polyfill library) can't depend on itself being censored; the application developer has to make this choice themselves.
+Notably, this proposal also introduces pragmas into class bodies, where they did not previously exist (since they are always strict).
 
 ## Rejected alternatives
 
@@ -129,13 +87,11 @@ console.assert(foo.toString() === "function foo() { [ native code ] }");
 
 Note that we do not propose a method that returns a new, censored version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new censored version of it?
 
-This alternative seems less good than the others:
+This alternative seems less good than the pragma:
 
-* It is difficult to en-masse censor many functions. In particular, it is impossible to censor closed-over functions which are kept alive by a third-party library, without nontrivial source text modification of that library. So, this fails the "easy to censor third-party libraries you use" criterion.
+* It is difficult to en-masse censor many functions. The pragma allows censoring an entire source file at once.
 * Censorship is done at runtime, not at parse time, so the implementation needs to store the source text for some interval.
-* In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstract, and harder to reason about.
-
-Let's not do this.
+* In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
 ### `delete Function.prototype.toString`
 
@@ -160,7 +116,7 @@ const otherGlobal = frames[0];
 console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("..."));
 ```
 
-It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. We'd like whatever we come up with to work for library developers as well.
+It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The pragma is targeted at library developers; application developers are better served by the out-of-band solution.
 
 ## FAQs
 
@@ -195,17 +151,6 @@ foo[Symbol.censoredFPToString] = false;
 console.assert(foo.toString.includes("...")); // oops
 ```
 
-As noted early, it's an important constraint that you not be able to uncensor functions after censoring them. So this design does not work.
+This basically makes the censorship toothless, so that you do not gain the encapsulation or memory usage benefits.
 
-You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.censor()` proposal above.
-
-### Some of these variants might break existing code
-
-While the pragma variant does not have this problem, both the `f.censor()` and the out-of-band-mechanism variants have the possibility of changing third-party code without actually editing its source text. I believe this is not actually a problem, for the following reasons:
-
-- Implementing this feature in JavaScript engines will not actually break any existing content. It is only by explicitly opting in to using this new feature, on code that was written to depend on `f.toString()`, that potential issues will come about. In such cases the developer can simply make a choice: stop using this new feature, simply arriving back at where they started—or stop using the `f.toString()`-dependent code.
-- Modifying the source text of the code you are running is not a significantly higher barrier than including a header or calling a `.censor()` function on its exposed APIs. Both require minimal effort on the part of the application developer who is choosing to run the code in the first place. There is no way the original author of the code can protect against source editing, and so it's reasonable that there's no way for them to "protect" against being run with a certain header.
-- There are many ways to change the behavior of code included in your application without editing its source text. Some of the more obvious are modifying the built-in objects, or otherwise changing the global environment it runs in. In general, most code is written to assume a certain environment, whether that be no-setters-on-`Array.prototype` or no-censored-`toString()`-on-functions. Applications can choose to break these assumptions, in which case they simply find out that they can't include code that relies on the assumptions being present.
-- There is a precedent for this kind of out-of-band, potentially-host-mediated modification throughout JavaScript platform. For example, [CSP](https://w3c.github.io/webappsec-csp/) can be used to disallow `eval()`. The proposed [realms API](https://github.com/tc39/proposal-realms/) is largely geared around letting you modify the behavior of various language features such as `eval()`, `import`, the built-ins, and more. Node.js selectively enables or disables internationalization-related language features depending on what flags you build it with. Etc.
-
-In conclusion, I don't believe there is a reason to consider the interaction with existing code as pertinent with regard to which proposal we move forward with.
+You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.censor()` proposal above (which has its own problems).
