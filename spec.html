@@ -11,4 +11,637 @@ contributors: Domenic Denicola
   <h1>Introduction</h1>
 
   <p>Background explanatory material for this specification can be found in the <a href="https://github.com/domenic/proposal-function-prototype-tostring-censorship">domenic/proposal-function-prototype-tostring-censorship</a> repository. See also the <a href="https://github.com/domenic/proposal-function-prototype-tostring-censorship/issues">open issues</a>.</p>
+
+  <emu-note type="editor">The base spec text for this proposal is taken from the <a href="https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-function.prototype.tostring">Function.prototype.toString revision</a> proposal in cases where that proposal modifies the base ECMAScript specification.</emu-note>
 </emu-intro>
+
+
+<emu-clause id="sec-directive-prologues-and-the-use-strict-directive">
+  <h1>Directive Prologues<del> and the Use Strict Directive</del></h1>
+
+  <p>A <dfn id="directive-prologue">Directive Prologue</dfn> is the longest sequence of |ExpressionStatement|s occurring as the initial |StatementListItem|s or |ModuleItem|s of a |FunctionBody|, a |ScriptBody|, <ins>a |ClassBody|, </ins>or a |ModuleBody| and where each |ExpressionStatement| in the sequence consists entirely of a |StringLiteral| token followed by a semicolon. The semicolon may appear explicitly or may be inserted by automatic semicolon insertion. A Directive Prologue may be an empty sequence.</p>
+
+  <p>A <dfn id="use-strict-directive">Use Strict Directive</dfn> is an |ExpressionStatement| in a Directive Prologue whose |StringLiteral| is either the exact code unit sequences `"use strict"` or `'use strict'`. A Use Strict Directive may not contain an |EscapeSequence| or |LineContinuation|.</p>
+
+  <p><ins>A <dfn id="no-function-prototype-tostring-directive">Use No Function.prototype.toString() Directive</dfn> is an |ExpressionStatement| in a Directive Prologue whose |StringLiteral| is either the exact code unit sequences `"use no Function.prototype.toString"` or `'use no Function.prototype.toString'`. A Use No Function.prototype.toString() Directive may not contain an |EscapeSequence| or |LineContinuation|.</ins></p>
+
+  <p>A Directive Prologue may contain more than one <del>Use Strict Directive</del><ins>of a given type of directive</ins>. However, an implementation may issue a warning if this occurs.</p>
+
+  <emu-note>
+    <p>The |ExpressionStatement|s of a Directive Prologue are evaluated normally during evaluation of the containing production. Implementations may define implementation specific meanings for |ExpressionStatement|s which are not <del>a Use Strict Directive</del><ins>one of the above-defined directives</ins> and which occur in a Directive Prologue. If an appropriate notification mechanism exists, an implementation should issue a warning if it encounters in a Directive Prologue an |ExpressionStatement| that is not <del>a Use Strict Directive</del><ins>one of the above-defined directives</ins> and which does not have a meaning defined by the implementation.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-function-definitions-runtime-semantics-instantiatefunctionobject">
+  <h1>Runtime Semantics: InstantiateFunctionObject</h1>
+  <p>With parameter _scope_.</p>
+  <emu-see-also-para op="InstantiateFunctionObject"></emu-see-also-para>
+  <emu-grammar>FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |FunctionDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Let _F_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
+    1. Perform MakeConstructor(_F_).
+    1. Perform SetFunctionName(_F_, _name_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-grammar>FunctionDeclaration : `function` `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |FunctionDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _F_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
+    1. Perform MakeConstructor(_F_).
+    1. Perform SetFunctionName(_F_, `"default"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-note>
+    <p>An anonymous |FunctionDeclaration| can only occur as part of an `export default` declaration.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-function-definitions-runtime-semantics-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+  <emu-grammar>FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Return NormalCompletion(~empty~).
+  </emu-alg>
+  <emu-note>
+    <p>An alternative semantics is provided in <emu-xref href="#sec-block-level-function-declarations-web-legacy-compatibility-semantics"></emu-xref>.</p>
+  </emu-note>
+  <emu-grammar>FunctionDeclaration : `function` `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Return NormalCompletion(~empty~).
+  </emu-alg>
+  <emu-grammar>FunctionExpression : `function` `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |FunctionExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _closure_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
+    1. Perform MakeConstructor(_closure_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
+    1. Return _closure_.
+  </emu-alg>
+  <emu-grammar>FunctionExpression : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |FunctionExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _funcEnv_ be NewDeclarativeEnvironment(_scope_).
+    1. Let _envRec_ be _funcEnv_'s EnvironmentRecord.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Perform _envRec_.CreateImmutableBinding(_name_, *false*).
+    1. Let _closure_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _funcEnv_, _strict_).
+    1. Perform MakeConstructor(_closure_).
+    1. Perform SetFunctionName(_closure_, _name_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>Set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
+    1. Perform _envRec_.InitializeBinding(_name_, _closure_).
+    1. Return _closure_.
+  </emu-alg>
+  <emu-note>
+    <p>The |BindingIdentifier| in a |FunctionExpression| can be referenced from inside the |FunctionExpression|'s |FunctionBody| to allow the function to call itself recursively. However, unlike in a |FunctionDeclaration|, the |BindingIdentifier| in a |FunctionExpression| cannot be referenced from and does not affect the scope enclosing the |FunctionExpression|.</p>
+  </emu-note>
+  <emu-note>
+    <p>A `prototype` property is automatically created for every function defined using a |FunctionDeclaration| or |FunctionExpression|, to allow for the possibility that the function will be used as a constructor.</p>
+  </emu-note>
+  <emu-grammar>FunctionStatementList : [empty]</emu-grammar>
+  <emu-alg>
+    1. Return NormalCompletion(*undefined*).
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-arrow-function-definitions-runtime-semantics-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+  <emu-grammar>ArrowFunction : ArrowParameters `=&gt;` ConciseBody</emu-grammar>
+  <emu-alg>
+    1. If the function code for this |ArrowFunction| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _parameters_ be CoveredFormalsList of |ArrowParameters|.
+    1. Let _closure_ be FunctionCreate(~Arrow~, _parameters_, |ConciseBody|, _scope_, _strict_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |ConciseBody| is *false*, </ins>Set _closure_.[[SourceText]] to the source text matched by |ArrowFunction|.
+    1. Return _closure_.
+  </emu-alg>
+  <emu-note>
+    <p>An |ArrowFunction| does not define local bindings for `arguments`, `super`, `this`, or `new.target`. Any reference to `arguments`, `super`, `this`, or `new.target` within an |ArrowFunction| must resolve to a binding in a lexically enclosing environment. Typically this will be the Function Environment of an immediately enclosing function. Even though an |ArrowFunction| may contain references to `super`, the function object created in step 4 is not made into a method by performing MakeMethod. An |ArrowFunction| that references `super` is always contained within a non-|ArrowFunction| and the necessary state to implement `super` is accessible via the _scope_ that is captured by the function object of the |ArrowFunction|.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-runtime-semantics-definemethod">
+  <h1>Runtime Semantics: DefineMethod</h1>
+  <p>With parameters _object_ and optional parameter _functionPrototype_.</p>
+  <emu-grammar>MethodDefinition : PropertyName `(` StrictFormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |MethodDefinition| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. If _functionPrototype_ was passed as a parameter, let _kind_ be ~Normal~; otherwise let _kind_ be ~Method~.
+    1. Let _closure_ be FunctionCreate(_kind_, |StrictFormalParameters|, |FunctionBody|, _scope_, _strict_). If _functionPrototype_ was passed as a parameter, then pass its value as the _prototype_ optional argument of FunctionCreate.
+    1. Perform MakeMethod(_closure_, _object_).
+    1. <ins>Set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.</ins>
+    1. Return the Record{[[Key]]: _propKey_, [[Closure]]: _closure_}.
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-method-definitions-runtime-semantics-propertydefinitionevaluation">
+  <h1>Runtime Semantics: PropertyDefinitionEvaluation</h1>
+  <p>With parameters _object_ and _enumerable_.</p>
+  <emu-see-also-para op="PropertyDefinitionEvaluation"></emu-see-also-para>
+  <emu-grammar>MethodDefinition : PropertyName `(` StrictFormalParameters `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Let _methodDef_ be DefineMethod of |MethodDefinition| with argument _object_.
+    1. ReturnIfAbrupt(_methodDef_).
+    1. Perform SetFunctionName(_methodDef_.[[Closure]], _methodDef_.[[Key]]).
+    1. Let _desc_ be the PropertyDescriptor{[[Value]]: _methodDef_.[[Closure]], [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _methodDef_.[[Key]], _desc_).
+  </emu-alg>
+  <emu-grammar>MethodDefinition : GeneratorMethod</emu-grammar>
+  <p>See <emu-xref href="#sec-generator-function-definitions"></emu-xref>.</p>
+  <emu-grammar>MethodDefinition : `get` PropertyName `(` `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |MethodDefinition| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _formalParameterList_ be the production <emu-grammar>FormalParameters : [empty]</emu-grammar>.
+    1. Let _closure_ be FunctionCreate(~Method~, _formalParameterList_, |FunctionBody|, _scope_, _strict_).
+    1. Perform MakeMethod(_closure_, _object_).
+    1. Perform SetFunctionName(_closure_, _propKey_, `"get"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
+    1. Let _desc_ be the PropertyDescriptor{[[Get]]: _closure_, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
+  </emu-alg>
+  <emu-grammar>MethodDefinition : `set` PropertyName `(` PropertySetParameterList `)` `{` FunctionBody `}`</emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |MethodDefinition| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _closure_ be FunctionCreate(~Method~, |PropertySetParameterList|, |FunctionBody|, _scope_, _strict_).
+    1. Perform MakeMethod(_closure_, _object_).
+    1. Perform SetFunctionName(_closure_, _propKey_, `"set"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |FunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
+    1. Let _desc_ be the PropertyDescriptor{[[Set]]: _closure_, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-generator-function-definitions-runtime-semantics-instantiatefunctionobject">
+  <h1>Runtime Semantics: InstantiateFunctionObject</h1>
+  <p>With parameter _scope_.</p>
+  <emu-see-also-para op="InstantiateFunctionObject"></emu-see-also-para>
+  <emu-grammar>GeneratorDeclaration : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |GeneratorDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Let _F_ be GeneratorFunctionCreate(~Normal~, |FormalParameters|, |GeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform SetFunctionName(_F_, _name_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |GeneratorBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-grammar>GeneratorDeclaration : `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for |GeneratorDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _F_ be GeneratorFunctionCreate(~Normal~, |FormalParameters|, |GeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform SetFunctionName(_F_, `"default"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |GeneratorBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-note>
+    <p>An anonymous |GeneratorDeclaration| can only occur as part of an `export default` declaration.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-generator-function-definitions-runtime-semantics-propertydefinitionevaluation">
+  <h1>Runtime Semantics: PropertyDefinitionEvaluation</h1>
+  <p>With parameter _object_ and _enumerable_.</p>
+  <emu-see-also-para op="PropertyDefinitionEvaluation"></emu-see-also-para>
+  <emu-grammar>GeneratorMethod : `*` PropertyName `(` StrictFormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |GeneratorMethod| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _closure_ be GeneratorFunctionCreate(~Method~, |StrictFormalParameters|, |GeneratorBody|, _scope_, _strict_).
+    1. Perform MakeMethod(_closure_, _object_).
+    1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform SetFunctionName(_closure_, _propKey_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |GeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorMethod|.
+    1. Let _desc_ be the PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-generator-function-definitions-runtime-semantics-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+  <emu-grammar>GeneratorExpression : `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for this |GeneratorExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _closure_ be GeneratorFunctionCreate(~Normal~, |FormalParameters|, |GeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |GeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
+    1. Return _closure_.
+  </emu-alg>
+  <emu-grammar>GeneratorExpression : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the function code for this |GeneratorExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _funcEnv_ be NewDeclarativeEnvironment(_scope_).
+    1. Let _envRec_ be _funcEnv_'s EnvironmentRecord.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Perform _envRec_.CreateImmutableBinding(_name_, *false*).
+    1. Let _closure_ be GeneratorFunctionCreate(~Normal~, |FormalParameters|, |GeneratorBody|, _funcEnv_, _strict_).
+    1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform SetFunctionName(_closure_, _name_).
+    1. Perform _envRec_.InitializeBinding(_name_, _closure_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |GeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
+    1. Return _closure_.
+  </emu-alg>
+  <emu-note>
+    <p>The |BindingIdentifier| in a |GeneratorExpression| can be referenced from inside the |GeneratorExpression|'s |FunctionBody| to allow the generator code to call itself recursively. However, unlike in a |GeneratorDeclaration|, the |BindingIdentifier| in a |GeneratorExpression| cannot be referenced from and does not affect the scope enclosing the |GeneratorExpression|.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-asyncgenerator-definitions-instantiatefunctionobject">
+  <h1>Runtime Semantics: InstantiateFunctionObject</h1>
+  <p>With parameter _scope_.</p>
+  <emu-grammar>
+    AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncGeneratorDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Let _F_ be ! AsyncGeneratorFunctionCreate(~Normal~, |FormalParameters|, |AsyncGeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
+    1. Perform ! DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform ! SetFunctionName(_F_, _name_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncGeneratorBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+
+  <emu-grammar>
+    AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncGeneratorDeclaration| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _F_ be AsyncGeneratorFunctionCreate(~Normal~, |FormalParameters|, |AsyncGeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ObjectCreate(%AsyncGeneratorPrototype%).
+    1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform SetFunctionName(_F_, `"default"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncGeneratorBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-note>
+    <p>An anonymous |AsyncGeneratorDeclaration| can only occur as part of an `export default` declaration.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-asyncgenerator-definitions-propertydefinitionevaluation">
+  <h1>Runtime Semantics: PropertyDefinitionEvaluation</h1>
+  <p>With parameter _object_ and _enumerable_.</p>
+  <emu-grammar>
+    AsyncGeneratorMethod : `async` [no LineTerminator here] `*` PropertyName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |AsyncGeneratorMethod| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _closure_ be ! AsyncGeneratorFunctionCreate(~Method~, |UniqueFormalParameters|, |AsyncGeneratorBody|, _scope_, _strict_).
+    1. Perform ! MakeMethod(_closure_, _object_).
+    1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
+    1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform ! SetFunctionName(_closure_, _propKey_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncGeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorMethod|.
+    1. Let _desc_ be PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-asyncgenerator-definitions-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+
+  <emu-grammar>
+    AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for this |AsyncGeneratorExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _closure_ be ! AsyncGeneratorFunctionCreate(~Normal~, |FormalParameters|, |AsyncGeneratorBody|, _scope_, _strict_).
+    1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
+    1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncGeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
+    1. Return _closure_.
+  </emu-alg>
+
+  <emu-grammar>
+    AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for this |AsyncGeneratorExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the running execution context's LexicalEnvironment.
+    1. Let _funcEnv_ be ! NewDeclarativeEnvironment(_scope_).
+    1. Let _envRec_ be _funcEnv_'s EnvironmentRecord.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Perform ! _envRec_.CreateImmutableBinding(_name_).
+    1. Let _closure_ be ! AsyncGeneratorFunctionCreate(~Normal~, |FormalParameters|, |AsyncGeneratorBody|, _funcEnv_, _strict_).
+    1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
+    1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Perform ! SetFunctionName(_closure_, _name_).
+    1. Perform ! _envRec_.InitializeBinding(_name_, _closure_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncGeneratorBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
+    1. Return _closure_.
+  </emu-alg>
+  <emu-note>
+    <p>The |BindingIdentifier| in an |AsyncGeneratorExpression| can be referenced from inside the |AsyncGeneratorExpression|'s |AsyncGeneratorBody| to allow the generator code to call itself recursively. However, unlike in an |AsyncGeneratorDeclaration|, the |BindingIdentifier| in an |AsyncGeneratorExpression| cannot be referenced from and does not affect the scope enclosing the |AsyncGeneratorExpression|.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-runtime-semantics-bindingclassdeclarationevaluation">
+  <h1>Runtime Semantics: BindingClassDeclarationEvaluation</h1>
+  <emu-grammar>ClassDeclaration : `class` BindingIdentifier ClassTail</emu-grammar>
+  <emu-alg>
+    1. Let _className_ be StringValue of |BindingIdentifier|.
+    1. Let _value_ be the result of ClassDefinitionEvaluation of |ClassTail| with argument _className_.
+    1. ReturnIfAbrupt(_value_).
+    1. Let _hasNameProperty_ be ? HasOwnProperty(_value_, `"name"`).
+    1. If _hasNameProperty_ is *false*, perform SetFunctionName(_value_, _className_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |ClassTail| is *false*, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
+    1. Let _env_ be the running execution context's LexicalEnvironment.
+    1. Perform ? InitializeBoundName(_className_, _value_, _env_).
+    1. Return _value_.
+  </emu-alg>
+  <emu-grammar>ClassDeclaration : `class` ClassTail</emu-grammar>
+  <emu-alg>
+    1. Let _value_ be the result of ClassDefinitionEvaluation of |ClassTail| with argument *undefined*.
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |ClassTail| is *false*, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
+    1. Return _value_.
+  </emu-alg>
+  <emu-note>
+    <p><emu-grammar>ClassDeclaration : `class` ClassTail</emu-grammar> only occurs as part of an |ExportDeclaration| and the setting of a name property and establishing its binding are handled as part of the evaluation action for that production. See <emu-xref href="#sec-exports-runtime-semantics-evaluation"></emu-xref>.</p>
+  </emu-note>
+</emu-clause>
+
+<emu-clause id="proposal-sec-class-definitions-runtime-semantics-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+  <emu-grammar>ClassDeclaration : `class` BindingIdentifier ClassTail</emu-grammar>
+  <emu-alg>
+    1. Let _status_ be the result of BindingClassDeclarationEvaluation of this |ClassDeclaration|.
+    1. ReturnIfAbrupt(_status_).
+    1. Return NormalCompletion(~empty~).
+  </emu-alg>
+  <emu-note>
+    <p><emu-grammar>ClassDeclaration : `class` ClassTail</emu-grammar> only occurs as part of an |ExportDeclaration| and is never directly evaluated.</p>
+  </emu-note>
+  <emu-grammar>ClassExpression : `class` BindingIdentifier? ClassTail</emu-grammar>
+  <emu-alg>
+    1. If |BindingIdentifier_opt| is not present, let _className_ be *undefined*.
+    1. Else, let _className_ be StringValue of |BindingIdentifier|.
+    1. Let _value_ be the result of ClassDefinitionEvaluation of |ClassTail| with argument _className_.
+    1. ReturnIfAbrupt(_value_).
+    1. If _className_ is not *undefined*, then
+      1. Let _hasNameProperty_ be ? HasOwnProperty(_value_, `"name"`).
+      1. If _hasNameProperty_ is *false*, then
+        1. Perform SetFunctionName(_value_, _className_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |ClassTail| is *false*, </ins>set _value_.[[SourceText]] to the source text matched by |ClassExpression|.
+    1. Return NormalCompletion(_value_).
+  </emu-alg>
+  <emu-note>
+    <p>If the class definition included a `name` static method then that method is not over-written with a `name` data property for the class name.</p>
+  </emu-note>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-async-function-definitions-InstantiateFunctionObject">
+  <h1>Runtime Semantics: InstantiateFunctionObject</h1>
+  <p>With parameter _scope_.</p>
+  <emu-grammar>
+    AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncFunctionDeclaration| is strict mode code, let _strict_ be *true*. Otherwise, let _strict_ be *false*.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Let _F_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
+    1. Perform ! SetFunctionName(_F_, _name_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncFunctionBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+  <emu-grammar>
+    AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncFunctionDeclaration| is strict mode code, let _strict_ be *true*. Otherwise, let _strict_ be *false*.
+    1. Let _F_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
+    1. Perform ! SetFunctionName(_F_, `"default"`).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncFunctionBody| is *false*, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
+    1. Return _F_.
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-async-function-definitions-PropertyDefinitionEvaluation">
+  <h1>Runtime Semantics: PropertyDefinitionEvaluation</h1>
+  <p>With parameters _object_ and _enumerable_.</p>
+  <emu-grammar>
+    AsyncMethod : `async` [no LineTerminator here] PropertyName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. Let _propKey_ be the result of evaluating |PropertyName|.
+    1. ReturnIfAbrupt(_propKey_).
+    1. If the function code for this |AsyncMethod| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _closure_ be ! AsyncFunctionCreate(~Method~, |UniqueFormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
+    1. Perform ! MakeMethod(_closure_, _object_).
+    1. Perform ! SetFunctionName(_closure_, _propKey_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncFunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncMethod|.
+    1. Let _desc_ be the PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
+    1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
+  </emu-alg>
+</emu-clause>
+
+
+<emu-clause id="proposal-sec-async-function-definitions-runtime-semantics-evaluation">
+  <h1>Runtime Semantics: Evaluation</h1>
+  <emu-grammar>
+    AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. Return NormalCompletion(~empty~).
+  </emu-alg>
+
+  <emu-grammar>
+    AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. Return NormalCompletion(~empty~).
+  </emu-alg>
+
+  <emu-grammar>
+    AsyncFunctionExpression : `async` [no LineTerminator here] `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncFunctionExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _closure_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncFunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
+    1. Return _closure_.
+  </emu-alg>
+
+  <emu-grammar>
+    AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+  </emu-grammar>
+  <emu-alg>
+    1. If the function code for |AsyncFunctionExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
+    1. Let _scope_ be the LexicalEnvironment of the running execution context.
+    1. Let _funcEnv_ be ! NewDeclarativeEnvironment(_scope_).
+    1. Let _envRec_ be _funcEnv_'s EnvironmentRecord.
+    1. Let _name_ be StringValue of |BindingIdentifier|.
+    1. Perform ! _envRec_.CreateImmutableBinding(_name_).
+    1. Let _closure_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _funcEnv_, _strict_).
+    1. Perform ! SetFunctionName(_closure_, _name_).
+    1. Perform ! _envRec_.InitializeBinding(_name_, _closure_).
+    1. <ins>If ContainsUseNoFunctionPrototypeToString of |AsyncFunctionBody| is *false*, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
+    1. Return _closure_.
+  </emu-alg>
+
+  <emu-grammar>
+    AwaitExpression : `await` UnaryExpression
+  </emu-grammar>
+  <emu-alg>
+    1. Let _exprRef_ be the result of evaluating |UnaryExpression|.
+    1. Let _value_ be ? GetValue(_exprRef_).
+    1. Return ? Await(_value_).
+  </emu-alg>
+</emu-clause>
+
+
+<!-- es6num="19.2.1.1.1" -->
+<emu-clause id="proposal-sec-createdynamicfunction" aoid="CreateDynamicFunction">
+  <h1>Runtime Semantics: CreateDynamicFunction( _constructor_, _newTarget_, _kind_, _args_ )</h1>
+  <p>The abstract operation CreateDynamicFunction is called with arguments _constructor_, _newTarget_, _kind_, and _args_. _constructor_ is the constructor function that is performing this action, _newTarget_ is the constructor that `new` was initially applied to, _kind_ is either `"normal"`, `"generator"`, or `"async"`, and _args_ is a List containing the actual argument values that were passed to _constructor_. The following steps are taken:</p>
+  <emu-alg>
+    1. Assert: The execution context stack has at least two elements.
+    1. Let _callerContext_ be the second to top element of the execution context stack.
+    1. Let _callerRealm_ be _callerContext_'s Realm.
+    1. Let _calleeRealm_ be the current Realm Record.
+    1. Perform ? HostEnsureCanCompileStrings(_callerRealm_, _calleeRealm_).
+    1. If _newTarget_ is *undefined*, let _newTarget_ be _constructor_.
+    1. If _kind_ is `"normal"`, then
+      1. Let _goal_ be the grammar symbol |FunctionBody[~Yield, ~Await]|.
+      1. Let _parameterGoal_ be the grammar symbol |FormalParameters[~Yield, ~Await]|.
+      1. Let _fallbackProto_ be `"%FunctionPrototype%"`.
+    1. Else if _kind_ is `"generator"`, then
+      1. Let _goal_ be the grammar symbol |GeneratorBody|.
+      1. Let _parameterGoal_ be the grammar symbol |FormalParameters[+Yield, ~Await]|.
+      1. Let _fallbackProto_ be `"%Generator%"`.
+    1. Else,
+      1. Assert: _kind_ is `"async"`.
+      1. Let _goal_ be the grammar symbol |AsyncFunctionBody|.
+      1. Let _parameterGoal_ be the grammar symbol |FormalParameters[~Yield, +Await]|.
+      1. Let _fallbackProto_ be `"%AsyncFunctionPrototype%"`.
+    1. Let _argCount_ be the number of elements in _args_.
+    1. Let _P_ be the empty String.
+    1. If _argCount_ = 0, let _bodyText_ be the empty String.
+    1. Else if _argCount_ = 1, let _bodyText_ be _args_[0].
+    1. Else _argCount_ &gt; 1,
+      1. Let _firstArg_ be _args_[0].
+      1. Let _P_ be ? ToString(_firstArg_).
+      1. Let _k_ be 1.
+      1. Repeat, while _k_ &lt; _argCount_-1
+        1. Let _nextArg_ be _args_[_k_].
+        1. Let _nextArgString_ be ? ToString(_nextArg_).
+        1. Let _P_ be the result of concatenating the previous value of _P_, the String `","` (a comma), and _nextArgString_.
+        1. Increase _k_ by 1.
+      1. Let _bodyText_ be _args_[_k_].
+    1. Let _bodyText_ be ? ToString(_bodyText_).
+    1. Let _parameters_ be the result of parsing _P_, interpreted as UTF-16 encoded Unicode text as described in <emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>, using _parameterGoal_ as the goal symbol. Throw a *SyntaxError* exception if the parse fails.
+    1. Let _body_ be the result of parsing _bodyText_, interpreted as UTF-16 encoded Unicode text as described in <emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>, using _goal_ as the goal symbol. Throw a *SyntaxError* exception if the parse fails.
+    1. If _bodyText_ is strict mode code, then let _strict_ be *true*, else let _strict_ be *false*.
+    1. If any static semantics errors are detected for _parameters_ or _body_, throw a *SyntaxError* or a *ReferenceError* exception, depending on the type of the error. If _strict_ is *true*, the Early Error rules for <emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar> are applied. Parsing and early error detection may be interweaved in an implementation dependent manner.
+    1. If ContainsUseStrict of _body_ is *true* and IsSimpleParameterList of _parameters_ is *false*, throw a *SyntaxError* exception.
+    1. If any element of the BoundNames of _parameters_ also occurs in the LexicallyDeclaredNames of _body_, throw a *SyntaxError* exception.
+    1. If _body_ Contains |SuperCall| is *true*, throw a *SyntaxError* exception.
+    1. If _parameters_ Contains |SuperCall| is *true*, throw a *SyntaxError* exception.
+    1. If _body_ Contains |SuperProperty| is *true*, throw a *SyntaxError* exception.
+    1. If _parameters_ Contains |SuperProperty| is *true*, throw a *SyntaxError* exception.
+    1. If _kind_ is `"generator"`, then
+      1. If _parameters_ Contains |YieldExpression| is *true*, throw a *SyntaxError* exception.
+    1. If _kind_ is `"async"`, then
+      1. If _parameters_ Contains |AwaitExpression| is *true*, throw a *SyntaxError* exception.
+    1. If _strict_ is *true*, then
+      1. If BoundNames of _parameters_ contains any duplicate elements, throw a *SyntaxError* exception.
+    1. Let _proto_ be ? GetPrototypeFromConstructor(_newTarget_, _fallbackProto_).
+    1. Let _F_ be FunctionAllocate(_proto_, _strict_, _kind_).
+    1. Let _realmF_ be _F_.[[Realm]].
+    1. Let _scope_ be _realmF_.[[GlobalEnv]].
+    1. Perform FunctionInitialize(_F_, ~Normal~, _parameters_, _body_, _scope_).
+    1. If _kind_ is `"generator"`, then
+      1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
+      1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+    1. Else if _kind_ is `"normal"`, perform MakeConstructor(_F_).
+    1. NOTE: Async functions are not constructable and do not have a [[Construct]] internal method or a `"prototype"` property.
+    1. Perform SetFunctionName(_F_, `"anonymous"`).
+    1. Let _prefix_ be the prefix associated with _kind_ in <emu-xref href="#table-dynamic-function-sourcetext-prefixes"></emu-xref>.
+    1. Let _sourceText_ be the String value whose elements are, in order, the code units of _prefix_, the code units of `" anonymous("`, the code units of _P_, 0x000A (LINE FEED), the code units of `") {"`, 0x000A (LINE FEED), the code units of _bodyText_, 0x000A (LINE FEED), and the code units of `"}"`.
+    1. <ins>TODO: If ... </ins>set _F_.[[SourceText]] to _sourceText_.
+    1. Return _F_.
+  </emu-alg>
+  <emu-note>
+    <p>A `prototype` property is automatically created for every function created using CreateDynamicFunction, to provide for the possibility that the function will be used as a constructor.</p>
+  </emu-note>
+
+  <emu-table id="table-dynamic-function-sourcetext-prefixes" caption="Dynamic Function SourceText Prefixes">
+    <table>
+      <tbody>
+        <tr><th>Kind</th><th>Prefix</th></tr>
+        <tr><td>`"normal"`</td><td>`"function"`</td></tr>
+        <tr><td>`"generator"`</td><td>`"function*"`</td></tr>
+        <tr><td>`"async"`</td><td>`"async function"`</td></tr>
+        <tr><td>`"async generator"`</td><td>`"async function*"`</td></tr>
+      </tbody>
+    </table>
+  </emu-table>
+</emu-clause>
+
+<emu-clause id="sec-function-definitions-runtime-semantics-containsusenofunctionprototypetostring">
+  <h1><ins>Runtime Semantics: ContainsUseNoFunctionPrototypeToString</ins></h1>
+  <emu-grammar>FunctionBody : FunctionStatementList</emu-grammar>
+  <emu-alg>
+    1. If the Directive Prologue of |FunctionStatementList| contains a Use No Function.prototype.toString() Directive, return *true*; otherwise, return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="sec-class-definitions-runtime-semantics-containsusenofunctionprototypetostring">
+  <h1><ins>Runtime Semantics: ContainsUseNoFunctionPrototypeToString</ins></h1>
+  <emu-grammar>ClassTail : ClassHeritage? `{` ClassBody `}`</emu-grammar>
+  <emu-alg>
+    1. If the Directive Prologue of |ClassElementList| contains a Use No Function.prototype.toString() Directive, return *true*; otherwise, return *false*.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="sec-arrow-function-definitions-runtime-semantics-containsusenofunctionprototypetostring">
+  <h1><ins>Runtime Semantics: ContainsUseNoFunctionPrototypeToString</ins></h1>
+  <emu-grammar>ConciseBody : AssignmentExpression</emu-grammar>
+  <emu-alg>
+    1. Return *false*.
+  </emu-alg>
+</emu-clause>
