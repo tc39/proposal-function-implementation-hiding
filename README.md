@@ -70,7 +70,7 @@ Note that we do not propose a method that returns a new, censored version becaus
 This alternative seems less good than the pragma:
 
 * It is difficult to en-masse censor many functions. The pragma allows censoring an entire source file at once.
-* Censorship is done at runtime, not at parse time, so the implementation needs to store the source text for some interval.
+* You can now censor anyone's functions, not just ones that you created and control.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
 ### `delete Function.prototype.toString`
