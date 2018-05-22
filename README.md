@@ -6,42 +6,22 @@ This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process
 
 ## The problem
 
-JavaScript's `Function.prototype.toString()` method reveals the source text originally used to create the function. This causes two main issues:
-
-### Encapsulation leakage
-
-Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones.
+JavaScript's `Function.prototype.toString()` method reveals the source text originally used to create the function. Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones.
 
 A historical example of this in action is AngularJS's reliance on `f.toString()` to figure out the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change, modifying the name of a parameter, into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
 
-Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). It can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
-
-### Memory usage
-
-Having to store the source text of a function for later lookup causes unnecessary memory usage. Especially on memory-constrained platforms, such as embedded devices or [Android Go phones](https://docs.google.com/presentation/d/1snSOAvzlbHsBaH1nelwf2JQq4KYOd6eWWIIO3fOlajs/edit#slide=id.g26319d7823_6_247), the extra space required for storing source text is quite significant.
-
-Some data on this was gathered in Chrome in [December 2016](https://docs.google.com/document/d/1LlZz8BqxVIaXbTSsYN4ZPgYGwJJpxMq2_sv6RvdRXTI/edit); scroll to the conclusions section, where you can find quotes like:
-
-> renderer's PartitionAlloc (Summary): WTF::StringImpl is clearly the biggest consumer. We confirmed that most of the WTF::StringImpls come from JavaScript source strings.
-
-> To achieve the next massive reduction, it's important to look at the following items: WTF::StringImpl: Most WTF::StringImpls come from JavaScript source strings.
-
-In Februrary 2018, a quick ad-hoc test was performed on Twitter.com (again in Chrome), producing the following graph (source string memory usage is the large blue block):
-
-![A graph showing source strings as the single biggest contributor to Twitter's memory usage, accounting for approximately one-fifth of the memory](./twitter-memory.png)
-
-All that said, at least in some architectures (including V8 and SpiderMonkey), it is not a simple memory win to start censoring `f.toString()`. These engines perform lazy compilation, which requires at least keeping the source text around until the relevant functions have been lazily compiled; it cannot be immediately dropped from memory after parsing. Regardless, we hope that by advancing this proposal we can put the groundwork in place to allow these optimizations to bubble up in priority.
+Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). This is only possible because engines have the magic censorship ability which is not available to developers. Finally, `f.toString()` can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
 
 ## The solution
 
 The solution is to provide a way to "censor" the output of `Function.prototype.toString()`. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
 
-* One that applied out of band, especially suited for applications that want to control their memory usage.
+* One that applied out of band, especially suited for applications that want to control their memory usage (not covered here).
 * One that is applied in-band with the source text, especially suited for libraries that want to gain encapsulation.
 
 The out-of-band censorship solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook. See [previous revisions of this document](https://github.com/domenic/proposal-function-prototype-tostring-censorship/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
 
-This proposal is for the in-band switch. It would be a new pragma, tentatively `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
+This proposal is for the in-band switch. It would be a new pragma, tentatively `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level, the per-class level, or the per-function level.
 
 Similar to the strict pragma, this new pragma would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
