@@ -41,16 +41,16 @@ contributors: Domenic Denicola
       Global code is Function.prototype.toString()-censored code if it begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
     </li>
     <li>
-      Eval code is strict mode code if it begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive or if the call to `eval` is a direct eval that is contained in Function.prototype.toString()-censored code.
+      Eval code is Function.prototype.toString()-censored code if it begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive or if the call to `eval` is a direct eval that is contained in Function.prototype.toString()-censored code.
     </li>
     <li>
-      Function code is strict mode code if the associated |FunctionDeclaration|, |FunctionExpression|, |GeneratorDeclaration|, |GeneratorExpression|, |AsyncFunctionDeclaration|, |AsyncFunctionExpression|, |AsyncGeneratorDeclaration|, |AsyncGeneratorExpression|, |MethodDefinition|, |ArrowFunction|, or |AsyncArrowFunction| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the function's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Function code is Function.prototype.toString()-censored code if the associated |FunctionDeclaration|, |FunctionExpression|, |GeneratorDeclaration|, |GeneratorExpression|, |AsyncFunctionDeclaration|, |AsyncFunctionExpression|, |AsyncGeneratorDeclaration|, |AsyncGeneratorExpression|, |MethodDefinition|, |ArrowFunction|, or |AsyncArrowFunction| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the function's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
     </li>
     <li>
-      Class code is strict mode code if the associated |ClassDeclaration| or |ClassExpression| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the class constructor's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Class code is Function.prototype.toString()-censored code if the associated |ClassDeclaration| or |ClassExpression| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the class constructor's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
     </li>
     <li>
-      Function code that is supplied as the arguments to the built-in `Function`, `Generator`, `AsyncFunction`, and `AsyncGenerator` constructors is strict mode code if the last argument is a String that when processed is a |FunctionBody| that begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Function code that is supplied as the arguments to the built-in `Function`, `Generator`, `AsyncFunction`, and `AsyncGenerator` constructors is Function.prototype.toString()-censored code if the last argument is a String that when processed is a |FunctionBody| that begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
     </li>
   </ul>
 </emu-clause>
