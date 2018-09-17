@@ -2,7 +2,7 @@
 
 A proposal for a new pragma, tentatively `"use no Function.prototype.toString"`, which censors the source text revealed by `fn.toString()` to `[native code]`.
 
-This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
+This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/).
 
 ## The problem
 
