@@ -18,7 +18,7 @@ Another unnecessary insight gained by `f.toString()` is how a function was creat
 
 ### `Error.prototype.stack`
 
-JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behaviour in the presence/absence a stack frame or, in the case of recusive functions, the frame count for a particular function. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information that restricts refactoring in a similar way to exposing the source text itself.
+JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behaviour in the presence/absence of a stack frame or, in the case of recusive functions, the frame count for a particular function. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information that restricts refactoring in a similar way to exposing the source text itself.
 
 ## The solution
 
