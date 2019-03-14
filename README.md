@@ -8,11 +8,17 @@ This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process
 
 ## The problem
 
-JavaScript's `Function.prototype.toString()` method reveals the source text originally used to create the function. Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones.
+### `Function.prototype.toString`
 
-A historical example of this in action is AngularJS's reliance on `f.toString()` to figure out the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change, modifying the name of a parameter, into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
+JavaScript's `Function.prototype.toString` method reveals the source text originally used to create the function. Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones. They can extract secrets from the source text to compromise an application's security or privacy requirements.
+
+A historical example of this in action is AngularJS's reliance on `f.toString()` to inspect the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change -- modifying the name of a parameter -- into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
 
 Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). This is only possible because engines have the magic censorship ability which is not available to developers. Finally, `f.toString()` can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
+
+### `Error.prototype.stack`
+
+JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behaviour in the presence/absence a stack frame or, in the case of recusive functions, the frame count for a particular function. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information that restricts refactoring in a similar way to exposing the source text itself.
 
 ## The solution
 
