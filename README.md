@@ -1,6 +1,8 @@
-# `Function.prototype.toString()` censorship proposal
+# function implementation censorship proposal
 
-A proposal for a new pragma, tentatively `"use no Function.prototype.toString"`, which censors the source text revealed by `fn.toString()` to `[native code]`.
+A proposal for a new pragma, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of security-sensitive code who would like to provide certain security guarantees.
+
+In practice, this pragma currently censors the source text revealed by `Function.prototype.toString` and position information and calling behaviour revealed by `Error.prototype.toString`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
 
 This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
 
