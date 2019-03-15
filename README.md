@@ -168,11 +168,11 @@ This proposal, like all JavaScript language proposals, only impacts the behavior
 Concretely, this proposal only impacts two things:
 
 * The JavaScript string values produced by `Function.prototype.toString()`.
-* The values produced by not-yet-standardized properties like `Error.prototype.stack` or other parts of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks).
+* The JavaScript values produced by not-yet-standardized properties like `Error.prototype.stack` or other parts of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks).
 
 The proposed specification text does _not_ impact any of the following:
 
-* What the developer sees on their screen when they do `console.log(someFunction)` (which don't have to be related to JavaScript-exposed `.toString()` return values).
+* What the developer sees on their screen when they do `console.log(someFunction)` (which doesn't have to be related to JavaScript-exposed `.toString()` return values).
 * What error stack traces the developer eventually sees on their screen when an unhandled exception or rejection occurs (which don't have to be related to JavaScript-exposed `.stack` strings).
 * What the developer sees on their screen when they look at the source code or network-response panels of devtools.
 * Whether the developer can set breakpoints or pause on uncaught exceptions inside functions.
