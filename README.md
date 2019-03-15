@@ -4,7 +4,7 @@ A proposal for a new directive, tentatively `"hide implementation"`, which provi
 
 In practice, this directive currently censors the source text revealed by `Function.prototype.toString` and position information and calling behavior revealed by `Error.prototype.stack`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
 
-This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
+This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/).
 
 ## The problem
 
