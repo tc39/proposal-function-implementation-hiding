@@ -180,6 +180,16 @@ The proposed specification text does _not_ impact any of the following:
 
 That said, developer tools teams are not governed by any language specification; they made independent decisions on their user experience. They could at any point decide that code from `example.com` gets hidden from devtools, or code that is minified gets hidden from devtools. Or, indeed, they may decide that code whose implementation is hidden from JavaScript via this proposal gets hidden from devtools. That is their decision, and no language specification can impact their UX. All we can say is that the proposal champions hope that devtools continue to make code maximally introspectable.
 
+### Will everyone just end up using this everywhere?
+
+We don't think so. Unlike `"use strict"`, which generally makes your code better, `"hide implementation"` is a specialized mechanism for function authors which need very high levels of encapsulation and freedom to refactor.
+
+Encapsulation is generally a sliding scale. Some library authors are content with underscore-prefixed properties, declaring that if a consumer depends on such properties, they might get broken. Some authors go further and use symbol-keyed properties to create a speed bump. Whereas others use `WeakMap`s or private fields, in order to ensure that consumers _cannot_ take a dependency on such implementation details, or probe into secret values stored within a class.
+
+This proposal is in the vein of the latter scenario. It ensures consumers cannot use `Function.prototype.toString` or `Error.prototype.stack` to create refactoring-hostile dependencies, or to expose secret values. We believe these cases are important enough to deserve a proposal, but not ubiquitous enough to fear a sprinkling of directive prologues throughout every JavaScript file.
+
+Finally, despite historical indications that this directive may provide memory savings (and thus get adoption from everyone who cares about memory, i.e., everyone), those indications have proven false. See [the appendix](#appendix-out-of-band-memory-saving-switches) for more on that. Even if the situation changes, we think the out-of-band mechanisms explored in the appendix will be a more attractive mechanism for realizing those memory savings, leaving this proposal focused on the more specialized encapsulation case.
+
 ## Appendix: out-of-band memory-saving switches
 
 Historically, there have been a number of ideas, motivations, and proposals in this space. In the January 2018 TC39 meeting, we realized that there were two related proposals:
