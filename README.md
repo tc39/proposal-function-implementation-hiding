@@ -1,8 +1,8 @@
 # function implementation censorship proposal
 
-A proposal for a new pragma, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of security-sensitive code who would like to provide certain security guarantees.
+A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of security-sensitive code who would like to provide certain security guarantees.
 
-In practice, this pragma currently censors the source text revealed by `Function.prototype.toString` and position information and calling behaviour revealed by `Error.prototype.toString`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
+In practice, this directive currently censors the source text revealed by `Function.prototype.toString` and position information and calling behaviour revealed by `Error.prototype.toString`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
 
 This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
 
@@ -31,7 +31,7 @@ The out-of-band censorship solution would be implemented by the host environment
 
 This proposal is for the in-band switch. It would be a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
-Similar to the strict pragma, this new pragma would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
+Similar to the use strict directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
 ```js
 function foo() {
@@ -75,9 +75,9 @@ console.assert(foo.toString() === "function foo() { [ native code ] }");
 
 Note that we do not propose a method that returns a new, censored version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new censored version of it?
 
-This alternative seems less good than the pragma:
+This alternative seems less good than the directive:
 
-* It is difficult to en-masse censor many functions. The pragma allows censoring an entire source file at once.
+* It is difficult to en-masse censor many functions. The directive allows censoring an entire source file at once.
 * You can now censor anyone's functions, not just ones that you created and control.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
@@ -104,7 +104,7 @@ const otherGlobal = frames[0];
 console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("..."));
 ```
 
-It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The pragma is targeted at library developers; application developers are better served by the out-of-band solution.
+It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The directive is targeted at library developers; application developers are better served by the out-of-band solution.
 
 ## FAQs
 
