@@ -1,18 +1,16 @@
 <pre class="metadata">
-title: Function.prototype.toString() censorship
+title: Function implementation censorship
 status: proposal
 stage: 1
 location: https://domenic.github.io/proposal-function-prototype-tostring-censorship/
 copyright: false
-contributors: Domenic Denicola
+contributors: Domenic Denicola, Michael Ficarra
 </pre>
 
 <emu-intro id="introduction">
   <h1>Introduction</h1>
 
   <p>Background explanatory material for this specification can be found in the <a href="https://github.com/domenic/proposal-function-prototype-tostring-censorship">domenic/proposal-function-prototype-tostring-censorship</a> repository. See also the <a href="https://github.com/domenic/proposal-function-prototype-tostring-censorship/issues">open issues</a>.</p>
-
-  <emu-note type="editor">The base spec text for this proposal is taken from the <a href="https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-function.prototype.tostring">Function.prototype.toString revision</a> proposal in cases where that proposal modifies the base ECMAScript specification.</emu-note>
 </emu-intro>
 
 
@@ -23,7 +21,7 @@ contributors: Domenic Denicola
 
   <p>A <dfn id="use-strict-directive">Use Strict Directive</dfn> is an |ExpressionStatement| in a Directive Prologue whose |StringLiteral| is either the exact code unit sequences `"use strict"` or `'use strict'`. A Use Strict Directive may not contain an |EscapeSequence| or |LineContinuation|.</p>
 
-  <p><ins>A <dfn id="no-function-prototype-tostring-directive">Use No Function.prototype.toString() Directive</dfn> is an |ExpressionStatement| in a Directive Prologue whose |StringLiteral| is either the exact code unit sequences `"use no Function.prototype.toString"` or `'use no Function.prototype.toString'`. A Use No Function.prototype.toString() Directive may not contain an |EscapeSequence| or |LineContinuation|.</ins></p>
+  <p><ins>A <dfn id="hide-implementation-directive">Hide Implementation Directive</dfn> is an |ExpressionStatement| in a Directive Prologue whose |StringLiteral| is either the exact code unit sequences `"hide implementation"` or `'hide implementation'`. A Hide Implementation Directive may not contain an |EscapeSequence| or |LineContinuation|.</ins></p>
 
   <p>A Directive Prologue may contain more than one <del>Use Strict Directive</del><ins>of a given type of directive</ins>. However, an implementation may issue a warning if this occurs.</p>
 
@@ -33,24 +31,24 @@ contributors: Domenic Denicola
 </emu-clause>
 
 
-<emu-clause id="sec-function-prototype-tostring-censored-code">
-  <h1><ins>Function.prototype.toString()-Censored Code</ins></h1>
-  <p>The output of <emu-xref href="#sec-function.prototype.tostring" title></emu-xref> is censored when the function was created inside Function.prototype.toString()-censored code. Code is interpreted as <dfn>Function.prototype.toString()-censored code</dfn> in the following situations:</p>
+<emu-clause id="sec-function-implementation-hidden-code">
+  <h1><ins>Function Implementation Hidden Code</ins></h1>
+  <p>The output of <emu-xref href="#sec-function.prototype.tostring" title></emu-xref> and of any runtime mechanisms for inspecting an <emu-xref href="#sec-error-objects">Error object</emu-xref>'s stack trace is censored when the function was created inside function implementation hidden code. Code is interpreted as <dfn>function implementation hidden code</dfn> in the following situations:</p>
   <ul>
     <li>
-      Global code is Function.prototype.toString()-censored code if it begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Global code is function implementation hidden code if it begins with a Directive Prologue that contains a Hide Implementation Directive.
     </li>
     <li>
-      Eval code is Function.prototype.toString()-censored code if it begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive or if the call to `eval` is a direct eval that is contained in Function.prototype.toString()-censored code.
+      Eval code is function implementation hidden code if it begins with a Directive Prologue that contains a Hide Implementation Directive or if the call to `eval` is a direct eval that is contained in function implementation hidden code.
     </li>
     <li>
-      Function code is Function.prototype.toString()-censored code if the associated |FunctionDeclaration|, |FunctionExpression|, |GeneratorDeclaration|, |GeneratorExpression|, |AsyncFunctionDeclaration|, |AsyncFunctionExpression|, |AsyncGeneratorDeclaration|, |AsyncGeneratorExpression|, |MethodDefinition|, |ArrowFunction|, or |AsyncArrowFunction| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the function's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Function code is function implementation hidden code if the associated |FunctionDeclaration|, |FunctionExpression|, |GeneratorDeclaration|, |GeneratorExpression|, |AsyncFunctionDeclaration|, |AsyncFunctionExpression|, |AsyncGeneratorDeclaration|, |AsyncGeneratorExpression|, |MethodDefinition|, |ArrowFunction|, or |AsyncArrowFunction| is contained in function implementation hidden code or if the code that produces the value of the function's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Hide Implementation Directive.
     </li>
     <li>
-      Class code is Function.prototype.toString()-censored code if the associated |ClassDeclaration| or |ClassExpression| is contained in Function.prototype.toString()-censored code or if the code that produces the value of the class constructor's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Class code is function implementation hidden code if the associated |ClassDeclaration| or |ClassExpression| is contained in function implementation hidden code or if the code that produces the value of the class constructor's [[ECMAScriptCode]] internal slot begins with a Directive Prologue that contains a Hide Implementation Directive.
     </li>
     <li>
-      Function code that is supplied as the arguments to the built-in `Function`, `Generator`, `AsyncFunction`, and `AsyncGenerator` constructors is Function.prototype.toString()-censored code if the last argument is a String that when processed is a |FunctionBody| that begins with a Directive Prologue that contains a Use No Function.prototype.toString() Directive.
+      Function code that is supplied as the arguments to the built-in `Function`, `Generator`, `AsyncFunction`, and `AsyncGenerator` constructors is function implementation hidden code if the last argument is a String that when processed is a |FunctionBody| that begins with a Directive Prologue that contains a Hide Implementation Directive.
     </li>
   </ul>
 </emu-clause>
@@ -67,7 +65,7 @@ contributors: Domenic Denicola
     1. Let _F_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
     1. Perform MakeConstructor(_F_).
     1. Perform SetFunctionName(_F_, _name_).
-    1. <ins>If the code matched by this |FunctionDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
+    1. <ins>If the code matched by this |FunctionDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-grammar>FunctionDeclaration : `function` `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
@@ -76,7 +74,7 @@ contributors: Domenic Denicola
     1. Let _F_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
     1. Perform MakeConstructor(_F_).
     1. Perform SetFunctionName(_F_, `"default"`).
-    1. <ins>If the code matched by this |FunctionDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
+    1. <ins>If the code matched by this |FunctionDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |FunctionDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-note>
@@ -104,7 +102,7 @@ contributors: Domenic Denicola
     1. Let _scope_ be the LexicalEnvironment of the running execution context.
     1. Let _closure_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _scope_, _strict_).
     1. Perform MakeConstructor(_closure_).
-    1. <ins>If the code matched by this |FunctionExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
+    1. <ins>If the code matched by this |FunctionExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
     1. Return _closure_.
   </emu-alg>
   <emu-grammar>FunctionExpression : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`</emu-grammar>
@@ -118,7 +116,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be FunctionCreate(~Normal~, |FormalParameters|, |FunctionBody|, _funcEnv_, _strict_).
     1. Perform MakeConstructor(_closure_).
     1. Perform SetFunctionName(_closure_, _name_).
-    1. <ins>If the code matched by this |FunctionExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
+    1. <ins>If the code matched by this |FunctionExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |FunctionExpression|.
     1. Perform _envRec_.InitializeBinding(_name_, _closure_).
     1. Return _closure_.
   </emu-alg>
@@ -143,7 +141,7 @@ contributors: Domenic Denicola
     1. Let _scope_ be the LexicalEnvironment of the running execution context.
     1. Let _parameters_ be CoveredFormalsList of |ArrowParameters|.
     1. Let _closure_ be FunctionCreate(~Arrow~, _parameters_, |ConciseBody|, _scope_, _strict_).
-    1. <ins>If the code matched by this |ArrowFunction| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |ArrowFunction|.
+    1. <ins>If the code matched by this |ArrowFunction| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |ArrowFunction|.
     1. Return _closure_.
   </emu-alg>
   <emu-note>
@@ -164,7 +162,7 @@ contributors: Domenic Denicola
     1. If _functionPrototype_ was passed as a parameter, let _kind_ be ~Normal~; otherwise let _kind_ be ~Method~.
     1. Let _closure_ be FunctionCreate(_kind_, |StrictFormalParameters|, |FunctionBody|, _scope_, _strict_). If _functionPrototype_ was passed as a parameter, then pass its value as the _prototype_ optional argument of FunctionCreate.
     1. Perform MakeMethod(_closure_, _object_).
-    1. <ins>If the code matched by this |MethodDefinition| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
+    1. <ins>If the code matched by this |MethodDefinition| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
     1. Return the Record{[[Key]]: _propKey_, [[Closure]]: _closure_}.
   </emu-alg>
 </emu-clause>
@@ -194,7 +192,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be FunctionCreate(~Method~, _formalParameterList_, |FunctionBody|, _scope_, _strict_).
     1. Perform MakeMethod(_closure_, _object_).
     1. Perform SetFunctionName(_closure_, _propKey_, `"get"`).
-    1. <ins>If the code matched by this |MethodDefinition| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
+    1. <ins>If the code matched by this |MethodDefinition| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
     1. Let _desc_ be the PropertyDescriptor{[[Get]]: _closure_, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
     1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
   </emu-alg>
@@ -207,7 +205,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be FunctionCreate(~Method~, |PropertySetParameterList|, |FunctionBody|, _scope_, _strict_).
     1. Perform MakeMethod(_closure_, _object_).
     1. Perform SetFunctionName(_closure_, _propKey_, `"set"`).
-    1. <ins>If the code matched by this |MethodDefinition| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
+    1. <ins>If the code matched by this |MethodDefinition| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |MethodDefinition|.
     1. Let _desc_ be the PropertyDescriptor{[[Set]]: _closure_, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
     1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
   </emu-alg>
@@ -226,7 +224,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
     1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform SetFunctionName(_F_, _name_).
-    1. <ins>If the code matched by this |GeneratorDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
+    1. <ins>If the code matched by this |GeneratorDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-grammar>GeneratorDeclaration : `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
@@ -236,7 +234,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
     1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform SetFunctionName(_F_, `"default"`).
-    1. <ins>If the code matched by this |GeneratorDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
+    1. <ins>If the code matched by this |GeneratorDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |GeneratorDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-note>
@@ -260,7 +258,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
     1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform SetFunctionName(_closure_, _propKey_).
-    1. <ins>If the code matched by this |GeneratorMethod| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorMethod|.
+    1. <ins>If the code matched by this |GeneratorMethod| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorMethod|.
     1. Let _desc_ be the PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
     1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
   </emu-alg>
@@ -276,7 +274,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be GeneratorFunctionCreate(~Normal~, |FormalParameters|, |GeneratorBody|, _scope_, _strict_).
     1. Let _prototype_ be ObjectCreate(%GeneratorPrototype%).
     1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
-    1. <ins>If the code matched by this |GeneratorExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
+    1. <ins>If the code matched by this |GeneratorExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
     1. Return _closure_.
   </emu-alg>
   <emu-grammar>GeneratorExpression : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`</emu-grammar>
@@ -292,7 +290,7 @@ contributors: Domenic Denicola
     1. Perform DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform SetFunctionName(_closure_, _name_).
     1. Perform _envRec_.InitializeBinding(_name_, _closure_).
-    1. <ins>If the code matched by this |GeneratorExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
+    1. <ins>If the code matched by this |GeneratorExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |GeneratorExpression|.
     1. Return _closure_.
   </emu-alg>
   <emu-note>
@@ -314,7 +312,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
     1. Perform ! DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform ! SetFunctionName(_F_, _name_).
-    1. <ins>If the code matched by this |AsyncGeneratorDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
+    1. <ins>If the code matched by this |AsyncGeneratorDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
     1. Return _F_.
   </emu-alg>
 
@@ -327,7 +325,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ObjectCreate(%AsyncGeneratorPrototype%).
     1. Perform DefinePropertyOrThrow(_F_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform SetFunctionName(_F_, `"default"`).
-    1. <ins>If the code matched by this |AsyncGeneratorDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
+    1. <ins>If the code matched by this |AsyncGeneratorDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncGeneratorDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-note>
@@ -352,7 +350,7 @@ contributors: Domenic Denicola
     1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
     1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform ! SetFunctionName(_closure_, _propKey_).
-    1. <ins>If the code matched by this |AsyncGeneratorMethod| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorMethod|.
+    1. <ins>If the code matched by this |AsyncGeneratorMethod| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorMethod|.
     1. Let _desc_ be PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
     1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
   </emu-alg>
@@ -371,7 +369,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be ! AsyncGeneratorFunctionCreate(~Normal~, |FormalParameters|, |AsyncGeneratorBody|, _scope_, _strict_).
     1. Let _prototype_ be ! ObjectCreate(%AsyncGeneratorPrototype%).
     1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
-    1. <ins>If the code matched by this |AsyncGeneratorExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
+    1. <ins>If the code matched by this |AsyncGeneratorExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
     1. Return _closure_.
   </emu-alg>
 
@@ -390,7 +388,7 @@ contributors: Domenic Denicola
     1. Perform ! DefinePropertyOrThrow(_closure_, `"prototype"`, PropertyDescriptor{[[Value]]: _prototype_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
     1. Perform ! SetFunctionName(_closure_, _name_).
     1. Perform ! _envRec_.InitializeBinding(_name_, _closure_).
-    1. <ins>If the code matched by this |AsyncGeneratorExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
+    1. <ins>If the code matched by this |AsyncGeneratorExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncGeneratorExpression|.
     1. Return _closure_.
   </emu-alg>
   <emu-note>
@@ -408,7 +406,7 @@ contributors: Domenic Denicola
     1. ReturnIfAbrupt(_value_).
     1. Let _hasNameProperty_ be ? HasOwnProperty(_value_, `"name"`).
     1. If _hasNameProperty_ is *false*, perform SetFunctionName(_value_, _className_).
-    1. <ins>If the code matched by this |ClassDeclaration| is not Function.prototype.toString()-censored code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
+    1. <ins>If the code matched by this |ClassDeclaration| is not function implementation hidden code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
     1. Let _env_ be the running execution context's LexicalEnvironment.
     1. Perform ? InitializeBoundName(_className_, _value_, _env_).
     1. Return _value_.
@@ -416,7 +414,7 @@ contributors: Domenic Denicola
   <emu-grammar>ClassDeclaration : `class` ClassTail</emu-grammar>
   <emu-alg>
     1. Let _value_ be the result of ClassDefinitionEvaluation of |ClassTail| with argument *undefined*.
-    1. <ins>If the code matched by this |ClassDeclaration| is not Function.prototype.toString()-censored code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
+    1. <ins>If the code matched by this |ClassDeclaration| is not function implementation hidden code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassDeclaration|.
     1. Return _value_.
   </emu-alg>
   <emu-note>
@@ -445,7 +443,7 @@ contributors: Domenic Denicola
       1. Let _hasNameProperty_ be ? HasOwnProperty(_value_, `"name"`).
       1. If _hasNameProperty_ is *false*, then
         1. Perform SetFunctionName(_value_, _className_).
-    1. <ins>If the code matched by this |ClassExpression| is not Function.prototype.toString()-censored code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassExpression|.
+    1. <ins>If the code matched by this |ClassExpression| is not function implementation hidden code, </ins>set _value_.[[SourceText]] to the source text matched by |ClassExpression|.
     1. Return NormalCompletion(_value_).
   </emu-alg>
   <emu-note>
@@ -465,7 +463,7 @@ contributors: Domenic Denicola
     1. Let _name_ be StringValue of |BindingIdentifier|.
     1. Let _F_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
     1. Perform ! SetFunctionName(_F_, _name_).
-    1. <ins>If the code matched by this |AsyncFunctionDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
+    1. <ins>If the code matched by this |AsyncFunctionDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
     1. Return _F_.
   </emu-alg>
   <emu-grammar>
@@ -475,7 +473,7 @@ contributors: Domenic Denicola
     1. If the function code for |AsyncFunctionDeclaration| is strict mode code, let _strict_ be *true*. Otherwise, let _strict_ be *false*.
     1. Let _F_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
     1. Perform ! SetFunctionName(_F_, `"default"`).
-    1. <ins>If the code matched by this |AsyncFunctionDeclaration| is not Function.prototype.toString()-censored code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
+    1. <ins>If the code matched by this |AsyncFunctionDeclaration| is not function implementation hidden code, </ins>set _F_.[[SourceText]] to the source text matched by |AsyncFunctionDeclaration|.
     1. Return _F_.
   </emu-alg>
 </emu-clause>
@@ -495,7 +493,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be ! AsyncFunctionCreate(~Method~, |UniqueFormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
     1. Perform ! MakeMethod(_closure_, _object_).
     1. Perform ! SetFunctionName(_closure_, _propKey_).
-    1. <ins>If the code matched by this |AsyncMethod| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncMethod|.
+    1. <ins>If the code matched by this |AsyncMethod| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncMethod|.
     1. Let _desc_ be the PropertyDescriptor{[[Value]]: _closure_, [[Writable]]: *true*, [[Enumerable]]: _enumerable_, [[Configurable]]: *true*}.
     1. Return ? DefinePropertyOrThrow(_object_, _propKey_, _desc_).
   </emu-alg>
@@ -525,7 +523,7 @@ contributors: Domenic Denicola
     1. If the function code for |AsyncFunctionExpression| is strict mode code, let _strict_ be *true*. Otherwise let _strict_ be *false*.
     1. Let _scope_ be the LexicalEnvironment of the running execution context.
     1. Let _closure_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _scope_, _strict_).
-    1. <ins>If the code matched by this |AsyncFunctionExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
+    1. <ins>If the code matched by this |AsyncFunctionExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
     1. Return _closure_.
   </emu-alg>
 
@@ -542,7 +540,7 @@ contributors: Domenic Denicola
     1. Let _closure_ be ! AsyncFunctionCreate(~Normal~, |FormalParameters|, |AsyncFunctionBody|, _funcEnv_, _strict_).
     1. Perform ! SetFunctionName(_closure_, _name_).
     1. Perform ! _envRec_.InitializeBinding(_name_, _closure_).
-    1. <ins>If the code matched by this |AsyncFunctionExpression| is not Function.prototype.toString()-censored code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
+    1. <ins>If the code matched by this |AsyncFunctionExpression| is not function implementation hidden code, </ins>set _closure_.[[SourceText]] to the source text matched by |AsyncFunctionExpression|.
     1. Return _closure_.
   </emu-alg>
 
@@ -599,7 +597,7 @@ contributors: Domenic Denicola
     1. Let _parameters_ be the result of parsing _P_, interpreted as UTF-16 encoded Unicode text as described in <emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>, using _parameterGoal_ as the goal symbol. Throw a *SyntaxError* exception if the parse fails.
     1. Let _body_ be the result of parsing _bodyText_, interpreted as UTF-16 encoded Unicode text as described in <emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>, using _goal_ as the goal symbol. Throw a *SyntaxError* exception if the parse fails.
     1. If _bodyText_ is strict mode code, then let _strict_ be *true*, else let _strict_ be *false*.
-    1. <ins>If _bodyText_ is Function.prototype.toString()-censored code, then let _censorSourceText_ be *true*, else let _censorSourceText_ be false.</ins>
+    1. <ins>If _bodyText_ is function implementation hidden code, then let _censorSourceText_ be *true*, else let _censorSourceText_ be false.</ins>
     1. If any static semantics errors are detected for _parameters_ or _body_, throw a *SyntaxError* or a *ReferenceError* exception, depending on the type of the error. If _strict_ is *true*, the Early Error rules for <emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar> are applied. Parsing and early error detection may be interweaved in an implementation dependent manner.
     1. If ContainsUseStrict of _body_ is *true* and IsSimpleParameterList of _parameters_ is *false*, throw a *SyntaxError* exception.
     1. If any element of the BoundNames of _parameters_ also occurs in the LexicallyDeclaredNames of _body_, throw a *SyntaxError* exception.
@@ -644,4 +642,14 @@ contributors: Domenic Denicola
       </tbody>
     </table>
   </emu-table>
+</emu-clause>
+
+<emu-clause id="proposal-sec-forbidden-extensions">
+  <h1>Forbidden Extensions</h1>
+
+  <p>Add the following bullet point:</p>
+
+  <ul>
+    <li><ins>Runtime mechanisms for inspecting <emu-xref href="#sec-error-objects">Error objects</emu-xref> must not expose the existence or source code location of function implementation hidden code. For example, a `"stack"` property which gives a stack trace must not include such functions in the stack trace.</ins></li>
+  </ul>
 </emu-clause>
