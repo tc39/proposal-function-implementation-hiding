@@ -22,14 +22,14 @@ JavaScript's (non-standard though de facto) `Error.prototype.stack` getter revea
 
 ## The solution
 
-The solution is to provide a way to "censor" the output of `Function.prototype.toString()`. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
+The solution is to provide a way to "censor" the output of the above functions. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
 
 * One that applied out of band, especially suited for applications that want to control their memory usage (not covered here).
 * One that is applied in-band with the source text, especially suited for libraries that want to gain encapsulation.
 
-The out-of-band censorship solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook. See [previous revisions of this document](https://github.com/domenic/proposal-function-prototype-tostring-censorship/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
+The out-of-band censorship solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook to address `Function.prototype.toString`. The mechanism for `Error.prototype.stack` censorship will depend on further development of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks). See [previous revisions of this document](https://github.com/domenic/proposal-function-prototype-tostring-censorship/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
 
-This proposal is for the in-band switch. It would be a new pragma, tentatively `"use no Function.prototype.toString"`. Like `"use strict"`, it could be placed at either the source file level, the per-class level, or the per-function level.
+This proposal is for the in-band switch. It would be a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
 Similar to the strict pragma, this new pragma would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
@@ -38,7 +38,7 @@ function foo() {
   const x = () => {};
 
   const y = () => {
-    "use no Function.prototype.toString";
+    "hide implementation";
     class Z {
       m() {}
     }
@@ -48,12 +48,12 @@ function foo() {
 
 In this example, `foo` and `x` remain uncensored, while `y`, `Z`, and `Z.prototype.m` are censored.
 
-This proposal draws heavily on the strengths of the existing strict mode pragma:
+This proposal draws heavily on the strengths of JavaScript's [existing directive prologue support](https://tc39.github.io/ecma262/#directive-prologue):
 
 * It allows easy censorship of an entire source file.
 * At the same time, it allows easy bundling together of uncensored and censored code, by using anonymous-function-wrapper blocks.
 
-Notably, this proposal also introduces pragmas into class bodies, where they did not previously exist (since they are always strict).
+Notably, this proposal also introduces a diective prologue for class bodies, where they did not previously exist (presumably since they are always strict and `"use strict"` was the only meaningful built-in directive).
 
 ## Rejected alternatives
 
