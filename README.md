@@ -48,12 +48,16 @@ function foo() {
 
 In this example, `foo` and `x` remain unhidden, while `y`, `Z`, and `Z.prototype.m` are considered hidden.
 
+### Why a directive prologue?
+
 This proposal draws heavily on the strengths of JavaScript's [existing directive prologue support](https://tc39.github.io/ecma262/#directive-prologue):
 
 * It allows easy hiding of the implementation details of all functions in an entire source file.
 * At the same time, it allows easy bundling together of hidden and non-hidden code, by using anonymous-function-wrapper blocks.
+* It is backward-compatible, allowing easy deployment of code that makes a best-effort to hide its implementation. `"hide implementation"` will be a no-op in engines that do not implement this proposal.
+* It is lexical, thus allowing tooling to easily and statically determine whether a function's implementation is hidden. For example, an inliner would know it should not inline an implementation-hidden function into an implementation-exposed function.
 
-Notably, this proposal also introduces a diective prologue for class bodies, where they did not previously exist (presumably since they are always strict and `"use strict"` was the only meaningful built-in directive).
+Notably, this proposal also introduces a directive prologue for class bodies, where they did not previously exist (presumably since they are always strict and `"use strict"` was the only meaningful built-in directive).
 
 ## Rejected alternatives
 
@@ -77,16 +81,18 @@ This alternative seems less good than the directive:
 
 * It is difficult to en-masse hide many functions. The directive allows hiding an entire source file at once.
 * You can now hide anyone's functions, not just ones that you created and control.
+* It is non-lexical, thus requiring tools that operate on source code to rely on heuristics to tell if a function is implementation-hidden or not.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
 ### A clone-creating hiding method
 
 The idea here is similar to the previous one, except that `f.hide()` returns a new, hidden function instead of modifying the function it is called on. The caller than needs to only hand out references to the clone, and not the original.
 
-This suffers from two of the same drawbacks:
+This suffers from three of the same drawbacks:
 
-* It is difficult to en-masse hide many functions. The directive allows hiding an entire source file at once.
-* In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
+* It is difficult to en-masse hide many functions.
+* It is non-lexical.
+* It makes this a property of the function, and not of the source text.
 
 and introduces a couple of new ones:
 
