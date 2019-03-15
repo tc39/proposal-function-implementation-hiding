@@ -106,6 +106,8 @@ console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("...")
 
 It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The directive is targeted at library developers; application developers are better served by the out-of-band solution.
 
+This proposal has since been expanded to include censorship of mre than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
+
 ## FAQs
 
 ### Should this censor the function name and length as well?
