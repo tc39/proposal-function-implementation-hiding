@@ -22,14 +22,7 @@ JavaScript's (non-standard though de facto) `Error.prototype.stack` getter revea
 
 ## The solution
 
-The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
-
-* One that applied out of band, especially suited for applications that want to control their memory usage (not covered here).
-* One that is applied in-band with the source text, especially suited for libraries that want to gain encapsulation.
-
-The out-of-band solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook to address `Function.prototype.toString`. The mechanism for `Error.prototype.stack` modification will depend on further development of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks). See [previous revisions of this document](https://github.com/domenic/proposal-function-implementation-hiding/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
-
-This proposal is for the in-band switch. It would be a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
+The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. This is done via a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
 Similar to the `"use strict"` directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets hidden. For example:
 
@@ -47,6 +40,8 @@ function foo() {
 ```
 
 In this example, `foo` and `x` remain unhidden, while `y`, `Z`, and `Z.prototype.m` are considered hidden.
+
+_Note: historically, folks have also explored out-of-band, application-level switches for hiding implementation details, often motivated by memory use. See [the appendix](#appendix-out-of-band-memory-saving-switches) for more discussion on that._
 
 ### Why a directive prologue?
 
@@ -165,3 +160,18 @@ console.assert(foo.toString.includes("...")); // oops
 This basically makes the hiding toothless, so that you do not gain the encapsulation or memory usage benefits.
 
 You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.hide()` proposal above (which has its own problems).
+
+## Appendix: out-of-band memory-saving switches
+
+Historically, there have been a number of ideas, motivations, and proposals in this space. In the January 2018 TC39 meeting, we realized that there were two related proposals:
+
+* (This proposal) An encapsulation mechanism, applied in-band with the source text, especially suited for libraries.
+* A memory-saving mechanism, applied out-of-band with the source text, especially suited for applications.
+
+The idea behind the latter is that in order to allow `Function.prototype.toString` to give back the expected results, engines need to hold large amounts of data in memory: namely, the original source text of the application, and all its dependencies. The hope was that by allowing application authors to globally turn off source text storage, the applications would be able to consume less memory.
+
+Since applications are boostrapped by a the host, this would most likely be done with host-specific mechanisms, e.g. a HTTP header, or a `<meta>` tag, or a Node.js command line flag. The host would then tie into the JavaScript language specification via [HostHasSourceTextAvailable](https://tc39.github.io/ecma262/#sec-hosthassourcetextavailable). See [previous revisions of this document](https://github.com/domenic/proposal-function-implementation-hiding/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for exploration of this space.
+
+The conclusion of the January 2018 TC39 meeting was to split these efforts, focusing this proposal on the in-band mechanism, and separately pursuing out-of-band mechanisms with individual host environments. However, shortly afterward discussions with JavaScript engine implementers revealed the basic premise behind the memory-saving mechanism was flawed. It wouldn't, in fact, save memory! At least in several modern JavaScript engines, the source text needs to be retained anyway for lazy compilation. So, making it unavailable to `Function.prototype.toString` would not allow the engine to reclaim the memory after all.
+
+As such, work on the out-of-band memory-saving switch for `Function.prototype.toString` has not progressed. It may pick up again, perhaps if engines change their lazy compilation techniques. And in that case, this appendix will be updated to direct you toward those efforts.
