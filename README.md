@@ -73,13 +73,25 @@ foo.hide();
 console.assert(foo.toString() === "function foo() { [ native code ] }");
 ```
 
-Note that we do not propose a method that returns a new, hidden version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new hidden version of it?
-
 This alternative seems less good than the directive:
 
 * It is difficult to en-masse hide many functions. The directive allows hiding an entire source file at once.
 * You can now hide anyone's functions, not just ones that you created and control.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
+
+### A clone-creating hiding method
+
+The idea here is similar to the previous one, except that `f.hide()` returns a new, hidden function instead of modifying the function it is called on. The caller than needs to only hand out references to the clone, and not the original.
+
+This suffers from two of the same drawbacks:
+
+* It is difficult to en-masse hide many functions. The directive allows hiding an entire source file at once.
+* In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
+
+and introduces a couple of new ones:
+
+* Any "cloning" of functions is difficult to spec and reason about. See [this discussion of `toMethod()`](https://github.com/allenwb/ESideas/blob/master/dcltomethod.md#the-tomethod-solution), a proposal from the run up to ES2015. It similarly made function-clones-with-one-tweak, and was rejected by TC39 for its complexity.
+* Some functions are not easy to replace with their clones. For example, methods need to be installed with their correct [[HomeObject]], which is not currently possible.
 
 ### `delete Function.prototype.toString`
 
