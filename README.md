@@ -1,8 +1,8 @@
-# Function implementation censorship proposal
+# Function implementation hiding proposal
 
 A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of encapsulated code who would like to provide certain encapsulation guarantees.
 
-In practice, this directive currently censors the source text revealed by `Function.prototype.toString` and position information and calling behavior revealed by `Error.prototype.stack`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
+In practice, this directive currently hides the source text revealed by `Function.prototype.toString` and position information and calling behavior revealed by `Error.prototype.stack`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
 
 This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/).
 
@@ -14,7 +14,7 @@ JavaScript's `Function.prototype.toString` method reveals the source text origin
 
 A historical example of this in action is AngularJS's reliance on `f.toString()` to inspect the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change—modifying the name of a parameter—into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
 
-Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). This is only possible because engines have the magic censorship ability which is not available to developers. Finally, `f.toString()` can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
+Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). This is only possible because engines have the magic implementation-hiding ability which is not available to developers. Finally, `f.toString()` can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
 
 ### `Error.prototype.stack`
 
@@ -22,16 +22,16 @@ JavaScript's (non-standard though de facto) `Error.prototype.stack` getter revea
 
 ## The solution
 
-The solution is to provide a way to "censor" the output of the above functions. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
+The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. In the January 2018 TC39 meeting, it was determined that the solution would involve two separate mechanisms:
 
 * One that applied out of band, especially suited for applications that want to control their memory usage (not covered here).
 * One that is applied in-band with the source text, especially suited for libraries that want to gain encapsulation.
 
-The out-of-band censorship solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook to address `Function.prototype.toString`. The mechanism for `Error.prototype.stack` censorship will depend on further development of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks). See [previous revisions of this document](https://github.com/domenic/proposal-function-prototype-tostring-censorship/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
+The out-of-band solution would be implemented by the host environment, using the [HostHasSourceTextAvailable](https://tc39.github.io/Function-prototype-toString-revision/#proposal-sec-hosthassourcetextavailable) hook to address `Function.prototype.toString`. The mechanism for `Error.prototype.stack` modification will depend on further development of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks). See [previous revisions of this document](https://github.com/domenic/proposal-function-implementation-hiding/blob/134802869ce99933973e9b8c19d7fd99a92a352f/README.md#an-external-to-javascript-switch) for more information on that; we do not consider it further here.
 
 This proposal is for the in-band switch. It would be a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
-Similar to the `"use strict"` directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
+Similar to the `"use strict"` directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets hidden. For example:
 
 ```js
 function foo() {
@@ -46,20 +46,20 @@ function foo() {
 }
 ```
 
-In this example, `foo` and `x` remain uncensored, while `y`, `Z`, and `Z.prototype.m` are censored.
+In this example, `foo` and `x` remain unhidden, while `y`, `Z`, and `Z.prototype.m` are considered hidden.
 
 This proposal draws heavily on the strengths of JavaScript's [existing directive prologue support](https://tc39.github.io/ecma262/#directive-prologue):
 
-* It allows easy censorship of an entire source file.
-* At the same time, it allows easy bundling together of uncensored and censored code, by using anonymous-function-wrapper blocks.
+* It allows easy hiding of the implementation details of all functions in an entire source file.
+* At the same time, it allows easy bundling together of hidden and non-hidden code, by using anonymous-function-wrapper blocks.
 
 Notably, this proposal also introduces a diective prologue for class bodies, where they did not previously exist (presumably since they are always strict and `"use strict"` was the only meaningful built-in directive).
 
 ## Rejected alternatives
 
-### A one-time censorship method
+### A one-time hiding method
 
-In this alternative, functions get a new method, `f.censor()`, which permanently censors their stringified value. You'd use it like so:
+In this alternative, functions get a new method, `f.hide()`, which permanently hides the function's implementation details from `Function.prototype.toString` and `Error.prototype.stack`. You'd use it like so:
 
 ```js
 function foo() {
@@ -68,17 +68,17 @@ function foo() {
 
 console.assert(foo.toString().includes("..."));
 
-foo.censor();
+foo.hide();
 
 console.assert(foo.toString() === "function foo() { [ native code ] }");
 ```
 
-Note that we do not propose a method that returns a new, censored version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new censored version of it?
+Note that we do not propose a method that returns a new, hidden version because of all the difficulties involved in "cloning" functions: e.g., how would reinstall a method with the correct [[HomeObject]] after creating a new hidden version of it?
 
 This alternative seems less good than the directive:
 
-* It is difficult to en-masse censor many functions. The directive allows censoring an entire source file at once.
-* You can now censor anyone's functions, not just ones that you created and control.
+* It is difficult to en-masse hide many functions. The directive allows hiding an entire source file at once.
+* You can now hide anyone's functions, not just ones that you created and control.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
 ### `delete Function.prototype.toString`
@@ -106,13 +106,13 @@ console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("...")
 
 It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The directive is targeted at library developers; application developers are better served by the out-of-band solution.
 
-This proposal has since been expanded to include censorship of more than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
+This proposal has since been expanded to include hiding of more than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
 
 ## FAQs
 
-### Should this censor the function name and length as well?
+### Should this hide the function name and length as well?
 
-Some of the same arguments for censorship also apply to a function's `name` and `length` properties. The language already has a mechanism for censoring these via `Object.defineProperty`:
+Some of the same arguments for hiding source text and stack trace information also apply to a function's `name` and `length` properties. The language already has a mechanism for hiding these via `Object.defineProperty`:
 
 ```js
 function foo(a, b, c) { }
@@ -125,7 +125,7 @@ console.assert(foo.name === "");
 console.assert(foo.length === 0);
 ```
 
-See discussion on this topic in [#2](https://github.com/domenic/proposal-function-prototype-tostring-censorship/issues/2).
+See discussion on this topic in [#2](https://github.com/domenic/proposal-function-implementation-hiding/issues/2).
 
 ### Shouldn't this kind of meta-API involve a well-known symbol?
 
@@ -137,13 +137,13 @@ This does not work very well for our use case. In particular, any kind of symbol
 function foo() { /* ... */ }
 console.assert(foo.toString.includes("..."));
 
-foo[Symbol.censoredFPToString] = true;
+foo[Symbol.hideImplementation] = true;
 console.assert(!foo.toString.includes("..."));
 
-foo[Symbol.censoredFPToString] = false;
+foo[Symbol.hideImplementation] = false;
 console.assert(foo.toString.includes("...")); // oops
 ```
 
-This basically makes the censorship toothless, so that you do not gain the encapsulation or memory usage benefits.
+This basically makes the hiding toothless, so that you do not gain the encapsulation or memory usage benefits.
 
-You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.censor()` proposal above (which has its own problems).
+You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.hide()` proposal above (which has its own problems).

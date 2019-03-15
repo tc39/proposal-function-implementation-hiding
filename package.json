@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "proposal-function-prototype-tostring-censorship",
-  "description": "Function.prototype.toString() censorship proposal for JavaScript (build setup only)",
+  "name": "proposal-function-implementation-hiding",
+  "description": "Function implementation hiding proposal for JavaScript (build setup only)",
   "license": "MIT",
-  "repository": "domenic/proposal-function-prototype-tostring-censorship",
+  "repository": "domenic/proposal-function-implementation-hiding",
   "scripts": {
     "prebuild": "mkdir out || exit 0",
     "build": "ecmarkup spec.html out/index.html",
