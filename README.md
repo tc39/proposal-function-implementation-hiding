@@ -1,8 +1,8 @@
 # function implementation censorship proposal
 
-A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of security-sensitive code who would like to provide certain security guarantees.
+A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of encapsulated code who would like to provide certain encapsulation guarantees.
 
-In practice, this directive currently censors the source text revealed by `Function.prototype.toString` and position information and calling behaviour revealed by `Error.prototype.toString`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
+In practice, this directive currently censors the source text revealed by `Function.prototype.toString` and position information and calling behavior revealed by `Error.prototype.stack`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
 
 This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process-document/).
 
@@ -10,15 +10,15 @@ This proposal is at stage 1 in the [TC39 process](https://tc39.github.io/process
 
 ### `Function.prototype.toString`
 
-JavaScript's `Function.prototype.toString` method reveals the source text originally used to create the function. Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones. They can extract secrets from the source text to compromise an application's security or privacy requirements.
+JavaScript's `Function.prototype.toString` method reveals the source text originally used to create the function. Revealing the source text of a function gives callers unnecessary insight into its implementation details. They can introspect on a function's implementation and react to it, causing what would otherwise likely be non-breaking changes to become breaking ones. They can extract secret values from the source text to compromise an application's attempts at encapsulation.
 
-A historical example of this in action is AngularJS's reliance on `f.toString()` to inspect the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change -- modifying the name of a parameter -- into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
+A historical example of this in action is AngularJS's reliance on `f.toString()` to inspect the parameter names of a function. It would then use these as part of its dependency injection framework. This made what was previously a non-breaking change—modifying the name of a parameter—into a breaking one. In particular, it made it impossible to use minification tools in combination with this mode of AngularJS.
 
 Another unnecessary insight gained by `f.toString()` is how a function was created. Most dramatically, it can be used to detect whether an implementation is "native" or not, by looking for the pattern of `[native code]`. This makes high-fidelity polyfilling difficult; indeed, some zealous polyfill libraries have gone as far as to replace `Function.prototype.toString` or introduce an own-property `polyfillFn.toString()` to prevent detection ([1](https://github.com/zloirock/core-js/blob/9f051803760c02b306aae2595621bb7ef698fc29/modules/_redefine.js#L28), [2](https://github.com/paulmillr/es6-shim/blob/8d7aec1403751686dbbd3c4fa13a7bb584a75bf3/es6-shim.js#L139)). This is only possible because engines have the magic censorship ability which is not available to developers. Finally, `f.toString()` can also be used to detect whether the implementation is done via a `class`, a `function`, an arrow function, a method, etc. It would be preferable if these were mostly-undetectable implementation details, allowing more confidence in refactoring between them.
 
 ### `Error.prototype.stack`
 
-JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behaviour in the presence/absence of a stack frame or, in the case of recusive functions, the frame count for a particular function. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information that restricts refactoring in a similar way to exposing the source text itself.
+JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behavior in the presence/absence of a stack frame or, in the case of recusive functions, the frame count for a particular function. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information that restricts refactoring in a similar way to exposing the source text itself.
 
 ## The solution
 
@@ -31,7 +31,7 @@ The out-of-band censorship solution would be implemented by the host environment
 
 This proposal is for the in-band switch. It would be a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
 
-Similar to the use strict directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
+Similar to the `"use strict"` directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets censored. For example:
 
 ```js
 function foo() {
@@ -106,20 +106,23 @@ console.assert(otherGlobal.Function.prototype.toString.call(foo).includes("...")
 
 It's also a very blunt tool, usable only on the realm level, and thus probably only by application developers. The directive is targeted at library developers; application developers are better served by the out-of-band solution.
 
-This proposal has since been expanded to include censorship of mre than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
+This proposal has since been expanded to include censorship of more than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
 
 ## FAQs
 
 ### Should this censor the function name and length as well?
 
-Some of the same arguments for censorship also apply to a function's `name` and `length` properties. The language already has a mechanism for censoring `name`:
+Some of the same arguments for censorship also apply to a function's `name` and `length` properties. The language already has a mechanism for censoring these via `Object.defineProperty`:
 
 ```js
-function foo() { }
+function foo(a, b, c) { }
 console.assert(foo.name === "foo");
+console.assert(foo.length === 3);
 
 Object.defineProperty(foo, "name", { value: "" });
+Object.defineProperty(foo, "length", { value: 0 });
 console.assert(foo.name === "");
+console.assert(foo.length === 0);
 ```
 
 See discussion on this topic in [#2](https://github.com/domenic/proposal-function-prototype-tostring-censorship/issues/2).
