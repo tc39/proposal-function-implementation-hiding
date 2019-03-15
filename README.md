@@ -163,7 +163,7 @@ You could try to patch around it by saying that only setting it to `true` works,
 
 ### How does this affect devtools or other methods of inspecting a function's implementation details?
 
-This proposal, like all JavaScript language proposals, only impacts the behavior of JavaScript code. Developer tools are outside the scope, and this proposal does not intend to change how they behave in any way. So, functions with their implementation hidden via the proposal's directive can still be inspected by devtools.
+This proposal, like all JavaScript language proposals, only impacts the behavior of JavaScript code. Developer tools are outside the scope, and this proposal does not intend to change how they behave in any way. So, functions with their implementation hidden via the proposal's directive can still be inspected by devtools, if the devtools choose to expose this information.
 
 Concretely, this proposal only impacts two things:
 
