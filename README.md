@@ -1,4 +1,4 @@
-# function implementation censorship proposal
+# Function implementation censorship proposal
 
 A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of encapsulated code who would like to provide certain encapsulation guarantees.
 
