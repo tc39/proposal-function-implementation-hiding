@@ -108,9 +108,9 @@ It's also a very blunt tool, usable only on the realm level, and thus probably o
 
 ## FAQs
 
-### Should this censor the function name as well?
+### Should this censor the function name and length as well?
 
-Some of the same arguments for censorship also apply to a function's `name` property. However, I've left that out of the proposal, because the language already has a mechanism for censoring `name`:
+Some of the same arguments for censorship also apply to a function's `name` and `length` properties. The language already has a mechanism for censoring `name`:
 
 ```js
 function foo() { }
@@ -120,7 +120,7 @@ Object.defineProperty(foo, "name", { value: "" });
 console.assert(foo.name === "");
 ```
 
-As such, I think it's better to leave these two orthogonal.
+See discussion on this topic in [#2](https://github.com/domenic/proposal-function-prototype-tostring-censorship/issues/2).
 
 ### Shouldn't this kind of meta-API involve a well-known symbol?
 
@@ -142,3 +142,5 @@ console.assert(foo.toString.includes("...")); // oops
 This basically makes the censorship toothless, so that you do not gain the encapsulation or memory usage benefits.
 
 You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.censor()` proposal above (which has its own problems).
+
+Additionally, we want the author of the function to be the one in control of its censorship, not anyone with a reference to that function. This was discussed with respect to an API for `Error.prototype.stack` censorship in the January 2019 TC39 meeting.
