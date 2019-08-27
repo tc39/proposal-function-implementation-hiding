@@ -9,15 +9,17 @@ branches:
   only:
     - master
 
+before_deploy:
+- openssl aes-256-cbc -K $encrypted_a0346a6c8f19_key -iv $encrypted_a0346a6c8f19_iv -in deploy_key.enc -out deploy_key -d
+
+deploy:
+  provider: pages
+  local_dir: out
+  deploy_key: deploy_key
+  edge:
+    branch: master
+
 notifications:
   email:
     on_success: never
     on_failure: always
-
-deploy:
-  provider: pages
-  local-dir: out
-  committer-from-gh: true
-  skip-cleanup: true
-  keep-history: true
-  github-token: $GH_TOKEN
