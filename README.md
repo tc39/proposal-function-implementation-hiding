@@ -157,25 +157,26 @@ foo[Symbol.hideImplementation] = false;
 console.assert(foo.toString.includes("...")); // oops
 ```
 
-This basically makes the hiding toothless, so that you do not gain the encapsulation or memory usage benefits.
+This basically makes the hiding toothless, so that you do not gain the desired encapsulation benefits.
 
-You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But that's just strange. We already have a mechanism for changing the state of an object in a non-reversible way: call a method on it. Thus, the `foo.hide()` proposal above (which has its own problems).
+You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But an additonal property we want is that only the author of the function can choose for the function to be hidden. Using a well-known symbol or a built-in API that only requires a reference to the function means that this capability is granted to anyone who is granted the calling capability (which also just requires a reference to the function).
 
 ### How does this affect devtools or other methods of inspecting a function's implementation details?
 
-This proposal, like all JavaScript language proposals, only impacts the behavior of JavaScript code. Developer tools are outside the scope, and this proposal does not intend to change how they behave in any way. So, functions with their implementation hidden via the proposal's directive can still be inspected by devtools, if the devtools choose to expose this information.
+This proposal, like all JavaScript language proposals, only impacts the behaviour of JavaScript code. Developer tools are outside the scope, and this proposal does not intend to change how they behave in any way. So, functions with their implementation hidden via the proposal's directives can still be inspected by any privileged API, such as those used by devtools, if the API chooses to expose this information.
 
 Concretely, this proposal only impacts two things:
 
 * The JavaScript string values produced by `Function.prototype.toString()`.
 * The JavaScript values produced by not-yet-standardized properties like `Error.prototype.stack` or other parts of the [error stacks proposal](https://github.com/tc39/proposal-error-stacks).
 
-The proposed specification text does _not_ impact any of the following:
+The proposed specification text does _not_ necessarily impact any of the following:
 
-* What the developer sees on their screen when they do `console.log(someFunction)` (which doesn't have to be related to JavaScript-exposed `.toString()` return values).
-* What error stack traces the developer eventually sees on their screen when an unhandled exception or rejection occurs (which don't have to be related to JavaScript-exposed `.stack` strings).
-* What the developer sees on their screen when they look at the source code or network-response panels of devtools.
-* Whether the developer can set breakpoints or pause on uncaught exceptions inside functions.
+* What the developer sees on their screen when they do `console.log(function(){})` (which doesn't have to be related to the JavaScript-exposed `.toString()` result).
+* What the developer sees on their screen when they do `console.log(new Error)` (which doesn't have to be related to the JavaScript-exposed `.stack` result).
+* What error stack traces the developer eventually sees on their screen when an unhandled exception or rejection occurs (which don't have to be related to the JavaScript-exposed `.stack` result).
+* What a devtools user sees on their screen when they look at the source code or network-response panels of devtools.
+* Whether a devtools user can set breakpoints or pause on uncaught exceptions inside functions.
 * ... etc.
 
 That said, developer tools teams are not governed by any language specification; they made independent decisions on their user experience. They could at any point decide that code from `example.com` gets hidden from devtools, or code that is minified gets hidden from devtools. Or, indeed, they may decide that code whose implementation is hidden from JavaScript via this proposal gets hidden from devtools. That is their decision, and no language specification can impact their UX. All we can say is that the proposal champions hope that devtools continue to make code maximally introspectable.
