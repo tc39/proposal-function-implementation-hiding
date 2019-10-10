@@ -1,10 +1,10 @@
 # Function implementation hiding proposal
 
-A proposal for a new directive, tentatively `"hide implementation"`, which provides a way for developers to indicate that implementation details should not be exposed. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details and authors of encapsulated code who would like to provide certain encapsulation guarantees.
+A proposal for a pair of new directives, tentatively `"sensitive"` and `"hide implementation"`, which provide a way for developers to indicate that certain implementation details should not be exposed to other user code. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details, authors of security-sensitive code, and authors of polyfills, among others.
 
-In practice, this directive currently hides the source text revealed by `Function.prototype.toString` and position information and calling behavior revealed by `Error.prototype.stack`. It may be expanded in the future as new implementation leakages are discovered or added to the language.
+In practice, the `"hide implementation"` directive hides the source text revealed by `Function.prototype.toString` and the file attribution and position information revealed by `Error.prototype.stack`. The `"sensitive"` directive hides the source text revealed by `Function.prototype.toString` and omits the function entirely from `Error.prototype.stack`. The `"sensitive"` directive is intended to be expanded in the future as new security-impacting information leakages are discovered or added to the language.
 
-This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/).
+This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/), and was last presented to the committee in [July, 2019](https://docs.google.com/presentation/d/1lWH97DxTLU3_1EJA-F19uIzagZQx7PZmys7WyNXw3cY/edit#slide=id.p).
 
 ## The problem
 
