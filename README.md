@@ -6,6 +6,7 @@ In practice, the `"hide implementation"` directive hides the source text reveale
 
 This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/), and was last presented to the committee in [July, 2019](https://docs.google.com/presentation/d/1lWH97DxTLU3_1EJA-F19uIzagZQx7PZmys7WyNXw3cY/edit#slide=id.p).
 
+
 ## The problem
 
 ### `Function.prototype.toString`
@@ -20,11 +21,12 @@ Another unnecessary insight gained by `f.toString()` is how a function was creat
 
 JavaScript's (non-standard though de facto) `Error.prototype.stack` getter reveals calling behavior in the presence/absence of a stack frame or, in the case of recusive functions, the number of times a particular function appears in a stack trace. If this calling behaviour is dependent upon secret values, whether present in the function source text or just lexically available to the function, it can result in these secrets being partially or fully exposed. Additionally, `Error.prototype.stack` reveals position (line/column number) information and file attribution information that restricts refactoring in a similar way to `Function.prototype.toString`'s exposure of the function source text.
 
+
 ## The solution
 
-The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. This is done via a new directive, tentatively `"hide implementation"`. Like `"use strict"`, it could be placed at either the source file level or the per-function level.
+The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. This is done via the above-described new directives, tentatively `"hide implementation"` and `"sensitive"`. Like `"use strict"`, they can be applied to either an entire source file or per-function.
 
-Similar to the `"use strict"` directive, this new directive would apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets hidden. For example:
+Similar to the `"use strict"` directive, these new directives apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets hidden. For example:
 
 ```js
 function foo() {
@@ -52,13 +54,12 @@ This proposal draws heavily on the strengths of JavaScript's [existing directive
 * It is backward-compatible, allowing easy deployment of code that makes a best-effort to hide its implementation. `"hide implementation"` will be a no-op in engines that do not implement this proposal.
 * It is lexical, thus allowing tooling to easily and statically determine whether a function's implementation is hidden. For example, an inliner would know it should not inline an implementation-hidden function into an implementation-exposed function.
 
-Notably, this proposal also introduces a directive prologue for class bodies, where they did not previously exist (presumably since they are always strict and `"use strict"` was the only meaningful built-in directive).
 
 ## Rejected alternatives
 
-### A one-time hiding method
+### A one-time hiding function
 
-In this alternative, functions get a new method, `f.hide()`, which permanently hides the function's implementation details from `Function.prototype.toString` and `Error.prototype.stack`. You'd use it like so:
+In this alternative, we introduce new functions such as `Error.hideFromStackTraces` or `Function.prototype.hideImplementation`, which permanently opt the functions into one of the new hidden behaviours. You'd use it like so:
 
 ```js
 function foo() {
@@ -67,7 +68,7 @@ function foo() {
 
 console.assert(foo.toString().includes("..."));
 
-foo.hide();
+foo.hideImplementation();
 
 console.assert(foo.toString() === "function foo() { [ native code ] }");
 ```
@@ -79,11 +80,11 @@ This alternative seems less good than the directive:
 * It is non-lexical, thus requiring tools that operate on source code to rely on heuristics to tell if a function is implementation-hidden or not.
 * In general, it makes this a property of the function, and not of the source text, which seems like the wrong level of abstraction, and harder to reason about.
 
-### A clone-creating hiding method
+### A clone-creating hiding function
 
-The idea here is similar to the previous one, except that `f.hide()` returns a new, hidden function instead of modifying the function it is called on. The caller than needs to only hand out references to the clone, and not the original.
+The idea here is similar to the previous one, except that `f.hideImplementation()` returns a *new* hidden function instead of modifying the function it is called on. The caller then needs to only hand out references to the clone, and not the original.
 
-This suffers from three of the same drawbacks:
+This suffers from many of the same drawbacks:
 
 * It is difficult to en-masse hide many functions.
 * It is non-lexical.
@@ -121,6 +122,26 @@ It's also a very blunt tool, usable only on the realm level, and thus probably o
 
 This proposal has since been expanded to include hiding of more than just `Function.prototype.toString` results, which makes solutions like this even less feasible.
 
+### Using a well-known symbol
+
+It's tempting, given APIs like `Symbol.isConcatSpreadable` or `Symbol.iterator`, to think that changing the behavior of an object with regard to some language feature should always be done by installing a well-known symbol onto the object.
+
+This does not work very well for our use case. This approach suffers from all of the same issues as the "one-time hiding function" approach. Additionally, any kind of symbol marking would be reversible: e.g.
+
+```js
+function foo() { /* ... */ }
+console.assert(foo.toString.includes("..."));
+
+foo[Symbol.hideImplementation] = true;
+console.assert(!foo.toString.includes("..."));
+
+foo[Symbol.hideImplementation] = false;
+console.assert(foo.toString.includes("...")); // oops
+```
+
+This basically makes the hiding toothless, so that you do not gain the desired encapsulation benefits. You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing.
+
+
 ## FAQs
 
 ### Should this hide the function name and length as well?
@@ -139,27 +160,6 @@ console.assert(foo.length === 0);
 ```
 
 See discussion on this topic in [#2](https://github.com/domenic/proposal-function-implementation-hiding/issues/2).
-
-### Shouldn't this kind of meta-API involve a well-known symbol?
-
-It's tempting, given APIs like `Symbol.isConcatSpreadable` or `Symbol.iterator`, to think that changing the behavior of an object with regard to some language feature should always be done by installing a well-known symbol onto the object.
-
-This does not work very well for our use case. In particular, any kind of symbol flag would be reversible: e.g.
-
-```js
-function foo() { /* ... */ }
-console.assert(foo.toString.includes("..."));
-
-foo[Symbol.hideImplementation] = true;
-console.assert(!foo.toString.includes("..."));
-
-foo[Symbol.hideImplementation] = false;
-console.assert(foo.toString.includes("...")); // oops
-```
-
-This basically makes the hiding toothless, so that you do not gain the desired encapsulation benefits.
-
-You could try to patch around it by saying that only setting it to `true` works, and setting it to `false` or deleting the property does nothing. But an additonal property we want is that only the author of the function can choose for the function to be hidden. Using a well-known symbol or a built-in API that only requires a reference to the function means that this capability is granted to anyone who is granted the calling capability (which also just requires a reference to the function).
 
 ### How does this affect devtools or other methods of inspecting a function's implementation details?
 
