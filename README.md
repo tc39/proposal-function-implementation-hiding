@@ -191,6 +191,12 @@ This proposal is in the vein of the latter scenario. It ensures consumers cannot
 
 Finally, despite historical indications that this directive may provide memory savings (and thus get adoption from everyone who cares about memory, i.e., everyone), those indications have proven false. See [the appendix](#appendix-out-of-band-memory-saving-switches) for more on that. Even if the situation changes, we think the out-of-band mechanisms explored in the appendix will be a more attractive mechanism for realizing those memory savings, leaving this proposal focused on the more specialized encapsulation case.
 
+### Why is there no "preserve implementation" directive?
+
+There may be a legitimate need for a function to be declared within the lexical closure of another function that includes a "hide implementation" directive, but to not inherit the implementation hiding behaviour of its ancestor. Most code should not require this, as the function declaration could be extracted to a function and the bindings it cares about passed in. But for cases where a direct call to `eval` is used alongside the kinds of reflection that are disabled by implementation hiding directives, and no assumptions can be made about the contents of the string being evaluated, it is not possible to textually extract the function declaration.
+
+This is a niche use case, and may be evaluated for inclusion in the language in a later proposal.
+
 ## Appendix: out-of-band memory-saving switches
 
 Historically, there have been a number of ideas, motivations, and proposals in this space. In the January 2018 TC39 meeting, we realized that there were two related proposals:
