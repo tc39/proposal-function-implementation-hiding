@@ -1,8 +1,8 @@
 # Function implementation hiding proposal
 
-A proposal for a pair of new directives, tentatively `"sensitive"` and `"hide implementation"`, which provide a way for developers to indicate that certain implementation details should not be exposed to other user code. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details, authors of security-sensitive code, and authors of polyfills, among others.
+A proposal for a pair of new directives, tentatively `"sensitive"` and `"hide source"`, which provide a way for developers to indicate that certain implementation details should not be exposed to other user code. This has benefits for authors of library code who would like to refactor without fear of breaking consumers relying on their implementation details, authors of security-sensitive code, and authors of polyfills, among others.
 
-In practice, the `"hide implementation"` directive hides the source text revealed by `Function.prototype.toString` and the file attribution and position information revealed by `Error.prototype.stack`. The `"sensitive"` directive hides the source text revealed by `Function.prototype.toString` and omits the function entirely from `Error.prototype.stack`. The `"sensitive"` directive is intended to be expanded in the future as new security-impacting information leakages are discovered or added to the language.
+In practice, the `"hide source"` directive hides the source text revealed by `Function.prototype.toString` and the file attribution and position information revealed by `Error.prototype.stack`. The `"sensitive"` directive hides the source text revealed by `Function.prototype.toString` and omits the function entirely from `Error.prototype.stack`. The `"sensitive"` directive is intended to be expanded in the future as new security-impacting information leakages are discovered or added to the language.
 
 This proposal is at stage 2 in the [TC39 process](https://tc39.github.io/process-document/), and was last presented to the committee in [July, 2019](https://docs.google.com/presentation/d/1lWH97DxTLU3_1EJA-F19uIzagZQx7PZmys7WyNXw3cY/edit#slide=id.p).
 
@@ -24,7 +24,7 @@ JavaScript's (non-standard though de facto) `Error.prototype.stack` getter revea
 
 ## The solution
 
-The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. This is done via the above-described new directives, tentatively `"hide implementation"` and `"sensitive"`. Like `"use strict"`, they can be applied to either an entire source file or per-function.
+The solution is to provide a way to modify the output of the above functions, to prevent them from exposing implementation details. This is done via the above-described new directives, tentatively `"hide source"` and `"sensitive"`. Like `"use strict"`, they can be applied to either an entire source file or per-function.
 
 Similar to the `"use strict"` directive, these new directives apply "inclusively downward", so that everything within the scope, plus the function itself when in function scope, gets hidden. For example:
 
@@ -33,7 +33,7 @@ function foo() {
   const x = () => {};
 
   const y = () => {
-    "hide implementation";
+    "hide source";
     class Z {
       m() {}
     }
@@ -51,7 +51,7 @@ This proposal draws heavily on the strengths of JavaScript's [existing directive
 
 * It allows easy hiding of the implementation details of all functions in an entire source file.
 * At the same time, it allows easy bundling together of hidden and non-hidden code, by using anonymous-function-wrapper blocks.
-* It is backward-compatible, allowing easy deployment of code that makes a best-effort to hide its implementation. `"hide implementation"` will be a no-op in engines that do not implement this proposal.
+* It is backward-compatible, allowing easy deployment of code that makes a best-effort to hide its implementation. `"hide source"` will be a no-op in engines that do not implement this proposal.
 * It is lexical, thus allowing tooling to easily and statically determine whether a function's implementation is hidden. For example, an inliner would know it should not inline an implementation-hidden function into an implementation-exposed function.
 
 
@@ -59,7 +59,7 @@ This proposal draws heavily on the strengths of JavaScript's [existing directive
 
 ### A one-time hiding function
 
-In this alternative, we introduce new functions such as `Error.hideFromStackTraces` or `Function.prototype.hideImplementation`, which permanently opt the functions into one of the new hidden behaviours. You'd use it like so:
+In this alternative, we introduce new functions such as `Error.hideFromStackTraces` or `Function.prototype.hideSource`, which permanently opt the functions into one of the new hidden behaviours. You'd use it like so:
 
 ```js
 function foo() {
@@ -68,7 +68,7 @@ function foo() {
 
 console.assert(foo.toString().includes("..."));
 
-foo.hideImplementation();
+foo.hideSource();
 
 console.assert(foo.toString() === "function foo() { [ native code ] }");
 ```
@@ -82,7 +82,7 @@ This alternative seems less good than the directive:
 
 ### A clone-creating hiding function
 
-The idea here is similar to the previous one, except that `f.hideImplementation()` returns a *new* hidden function instead of modifying the function it is called on. The caller then needs to only hand out references to the clone, and not the original.
+The idea here is similar to the previous one, except that `f.hideSource()` returns a *new* hidden function instead of modifying the function it is called on. The caller then needs to only hand out references to the clone, and not the original.
 
 This suffers from many of the same drawbacks:
 
@@ -132,10 +132,10 @@ This does not work very well for our use case. This approach suffers from all of
 function foo() { /* ... */ }
 console.assert(foo.toString.includes("..."));
 
-foo[Symbol.hideImplementation] = true;
+foo[Symbol.hideSource] = true;
 console.assert(!foo.toString.includes("..."));
 
-foo[Symbol.hideImplementation] = false;
+foo[Symbol.hideSource] = false;
 console.assert(foo.toString.includes("...")); // oops
 ```
 
@@ -183,7 +183,7 @@ That said, developer tools teams are not governed by any language specification;
 
 ### Will everyone just end up using this everywhere?
 
-We don't think so. Unlike `"use strict"`, which generally makes your code better, `"hide implementation"` is a specialized mechanism for function authors which need very high levels of encapsulation and freedom to refactor.
+We don't think so. Unlike `"use strict"`, which generally makes your code better, `"hide source"` is a specialized mechanism for function authors which need very high levels of encapsulation and freedom to refactor.
 
 Encapsulation is generally a sliding scale. Some library authors are content with underscore-prefixed properties, declaring that if a consumer depends on such properties, they might get broken. Some authors go further and use symbol-keyed properties to create a speed bump. Whereas others use `WeakMap`s or private fields, in order to ensure that consumers _cannot_ take a dependency on such implementation details, or probe into secret values stored within a class.
 
@@ -191,9 +191,9 @@ This proposal is in the vein of the latter scenario. It ensures consumers cannot
 
 Finally, despite historical indications that this directive may provide memory savings (and thus get adoption from everyone who cares about memory, i.e., everyone), those indications have proven false. See [the appendix](#appendix-out-of-band-memory-saving-switches) for more on that. Even if the situation changes, we think the out-of-band mechanisms explored in the appendix will be a more attractive mechanism for realizing those memory savings, leaving this proposal focused on the more specialized encapsulation case.
 
-### Why is there no "preserve implementation" directive?
+### Why is there no "preserve source" directive?
 
-There may be a legitimate need for a function to be declared within the lexical closure of another function that includes a "hide implementation" directive, but to not inherit the implementation hiding behaviour of its ancestor. Most code should not require this, as the function declaration could be extracted to a function and the bindings it cares about passed in. But for cases where a direct call to `eval` is used alongside the kinds of reflection that are disabled by implementation hiding directives, and no assumptions can be made about the contents of the string being evaluated, it is not possible to textually extract the function declaration.
+There may be a legitimate need for a function to be declared within the lexical closure of another function that includes a "hide source" directive, but to not inherit the implementation hiding behaviour of its ancestor. Most code should not require this, as the function declaration could be extracted to a function and the bindings it cares about passed in. But for cases where a direct call to `eval` is used alongside the kinds of reflection that are disabled by implementation hiding directives, and no assumptions can be made about the contents of the string being evaluated, it is not possible to textually extract the function declaration.
 
 This is a niche use case, and may be evaluated for inclusion in the language in a later proposal.
 
