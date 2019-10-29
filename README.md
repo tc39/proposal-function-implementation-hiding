@@ -159,7 +159,7 @@ console.assert(foo.name === "");
 console.assert(foo.length === 0);
 ```
 
-See discussion on this topic in [#2](https://github.com/domenic/proposal-function-implementation-hiding/issues/2).
+Because it is already possible to do and it would not be universally desirable for the target use cases of the `"hide source"` directive, this behaviour is not included with the directive(s). See discussion on this topic in [#2](https://github.com/domenic/proposal-function-implementation-hiding/issues/2).
 
 ### How does this affect devtools or other methods of inspecting a function's implementation details?
 
