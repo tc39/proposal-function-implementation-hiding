@@ -191,6 +191,19 @@ This proposal is in the vein of the latter scenario. It ensures consumers cannot
 
 Finally, despite historical indications that this directive may provide memory savings (and thus get adoption from everyone who cares about memory, i.e., everyone), those indications have proven false. See [the appendix](#appendix-out-of-band-memory-saving-switches) for more on that. Even if the situation changes, we think the out-of-band mechanisms explored in the appendix will be a more attractive mechanism for realizing those memory savings, leaving this proposal focused on the more specialized encapsulation case.
 
+### In what ways might the "sensitive" directive expand in the future?
+
+The `"sensitive"` directive provides a declarative, textually-bounded opt-in with the end goal of making it more likely for JavaScript programmers of all skill levels to write security-sensitive code without introducing unwanted confidentiality violations. To understand the bounds, we must define which aspects of the program are given a confidentiality guarantee, and which parts of the program are considered "within" the confidentiality boundary. Confidentiality is provided for
+
+0. the source text of the marked region
+0. the local bindings of the marked region
+0. if the marked region is a function, the calling behaviour of the marked function
+  0. this includes all interactions with the call stack: who calls it, who it calls, how many times it appears, etc.
+
+Program code is considered within the confidentiality boundary if and only if it is textually within the marked region. Code that is evaluated by a direct call to `eval` within the confidentiality boundary is also considered to be within the confidentiality boundary.
+
+Note that limitations imposed on code outside of the confidentiality boundary of a marked region may also apply to code within its confidentiality boundary due to language design/usability constraints. For example, a function marked as `"sensitive"` will not appear in stack frames, regardless of whether the code doing the reflection exists within the appropriate confidentiality boundary.
+
 ### Why is there no "preserve source" directive?
 
 There may be a legitimate need for a function to be declared within the lexical closure of another function that includes a "hide source" directive, but to not inherit the implementation hiding behaviour of its ancestor. Most code should not require this, as the function declaration could be extracted to a function and the bindings it cares about passed in. But for cases where a direct call to `eval` is used alongside the kinds of reflection that are disabled by implementation hiding directives, and no assumptions can be made about the contents of the string being evaluated, it is not possible to textually extract the function declaration.
