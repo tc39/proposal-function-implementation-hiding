@@ -195,15 +195,15 @@ Finally, despite historical indications that this directive may provide memory s
 
 The `"sensitive"` directive provides a declarative, textually-bounded opt-in with the end goal of making it more likely for JavaScript programmers of all skill levels to write security-sensitive code without introducing unwanted confidentiality violations. To understand the bounds, we must define which aspects of the program are given a confidentiality guarantee, and which parts of the program are considered "within" the confidentiality boundary. Confidentiality is provided for
 
-1. the source text of the marked region
-1. the local bindings of the marked region
+1. the source text of the confidential region
+1. the local bindings of the confidential region
 	1. if, for example, the [Function.prototype.environment proposal](https://es.discourse.group/t/function-prototype-environment/108) made its way into the language, it would not be available for functions marked as `"sensitive"`
-1. if the marked region is a function, the calling behaviour of the marked function
-	1. in practice, this means that the marked function does not appear in stack reflection mechanisms
+1. if the confidential region is a function, the calling behaviour of that function
+	1. in practice, this means that the function does not appear in stack reflection mechanisms
 
-Program code is considered within the confidentiality boundary if and only if it is textually within the marked region. Code that is evaluated by a direct call to `eval` within the confidentiality boundary is also considered to be within the confidentiality boundary.
+Program code is considered within the confidentiality boundary if and only if it is textually within the confidential region. Code that is evaluated by a direct call to `eval` within the confidentiality boundary is also considered to be within the confidentiality boundary.
 
-Note that limitations imposed on code outside of the confidentiality boundary of a marked region may also apply to code within its confidentiality boundary due to language design/usability constraints. For example, a function marked as `"sensitive"` will not appear in stack frames, regardless of whether the code doing the reflection exists within the appropriate confidentiality boundary.
+Note that limitations imposed on code outside of the confidentiality boundary of a confidential region may also apply to code within its confidentiality boundary due to language design/usability constraints. For example, a function marked as `"sensitive"` will not appear in stack frames, regardless of whether the code doing the reflection exists within the appropriate confidentiality boundary.
 
 ### Why is there no "preserve source" directive?
 
