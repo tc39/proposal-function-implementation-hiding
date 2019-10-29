@@ -195,10 +195,11 @@ Finally, despite historical indications that this directive may provide memory s
 
 The `"sensitive"` directive provides a declarative, textually-bounded opt-in with the end goal of making it more likely for JavaScript programmers of all skill levels to write security-sensitive code without introducing unwanted confidentiality violations. To understand the bounds, we must define which aspects of the program are given a confidentiality guarantee, and which parts of the program are considered "within" the confidentiality boundary. Confidentiality is provided for
 
-0. the source text of the marked region
-0. the local bindings of the marked region
-0. if the marked region is a function, the calling behaviour of the marked function
-  0. this includes all interactions with the call stack: who calls it, who it calls, how many times it appears, etc.
+1. the source text of the marked region
+1. the local bindings of the marked region
+	1. if, for example, the [Function.prototype.environment proposal](https://es.discourse.group/t/function-prototype-environment/108) made its way into the language, it would not be available for functions marked as `"sensitive"`
+1. if the marked region is a function, the calling behaviour of the marked function
+	1. in practice, this means that the marked function does not appear in stack reflection mechanisms
 
 Program code is considered within the confidentiality boundary if and only if it is textually within the marked region. Code that is evaluated by a direct call to `eval` within the confidentiality boundary is also considered to be within the confidentiality boundary.
 
