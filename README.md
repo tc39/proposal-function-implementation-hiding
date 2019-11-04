@@ -55,6 +55,74 @@ This proposal draws heavily on the strengths of JavaScript's [existing directive
 * It is lexical, thus allowing tooling to easily and statically determine whether a function's implementation is hidden. For example, an inliner would know it should not inline an implementation-hidden function into an implementation-exposed function.
 
 
+## Examples
+
+A stack trace:
+
+```
+$ node
+Welcome to Node.js v12.13.0.
+Type ".help" for more information.
+> console.log((new Error).stack)
+Error
+    at repl:1:14
+    at Script.runInThisContext (vm.js:116:20)
+    at REPLServer.defaultEval (repl.js:404:29)
+    at bound (domain.js:420:14)
+    at REPLServer.runBound [as eval] (domain.js:433:12)
+    at REPLServer.onLine (repl.js:715:10)
+    at REPLServer.emit (events.js:215:7)
+    at REPLServer.EventEmitter.emit (domain.js:476:20)
+    at REPLServer.Interface._onLine (readline.js:316:10)
+    at REPLServer.Interface._line (readline.js:693:8)
+undefined
+> 
+```
+
+The same stack trace if `bound` was marked as `"sensitive"`:
+
+```
+$ node
+Welcome to Node.js v12.13.0.
+Type ".help" for more information.
+> console.log((new Error).stack)
+Error
+    at repl:1:14
+    at Script.runInThisContext (vm.js:116:20)
+    at REPLServer.defaultEval (repl.js:404:29)
+    at REPLServer.runBound [as eval] (domain.js:433:12)
+    at REPLServer.onLine (repl.js:715:10)
+    at REPLServer.emit (events.js:215:7)
+    at REPLServer.EventEmitter.emit (domain.js:476:20)
+    at REPLServer.Interface._onLine (readline.js:316:10)
+    at REPLServer.Interface._line (readline.js:693:8)
+undefined
+> 
+```
+
+The same stack trace if `bound` was marked as `"hide source"`:
+
+```
+$ node
+Welcome to Node.js v12.13.0.
+Type ".help" for more information.
+> console.log((new Error).stack)
+Error
+    at repl:1:14
+    at Script.runInThisContext (vm.js:116:20)
+    at REPLServer.defaultEval (repl.js:404:29)
+    at anonymous
+    at REPLServer.runBound [as eval] (domain.js:433:12)
+    at REPLServer.onLine (repl.js:715:10)
+    at REPLServer.emit (events.js:215:7)
+    at REPLServer.EventEmitter.emit (domain.js:476:20)
+    at REPLServer.Interface._onLine (readline.js:316:10)
+    at REPLServer.Interface._line (readline.js:693:8)
+undefined
+> 
+```
+
+
 ## Rejected alternatives
 
 ### A one-time hiding function
