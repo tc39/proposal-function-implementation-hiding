@@ -111,7 +111,7 @@ Error
     at repl:1:14
     at Script.runInThisContext (vm.js:116:20)
     at REPLServer.defaultEval (repl.js:404:29)
-    at anonymous
+    at bound (<anonymous>)
     at REPLServer.runBound [as eval] (domain.js:433:12)
     at REPLServer.onLine (repl.js:715:10)
     at REPLServer.emit (events.js:215:7)
